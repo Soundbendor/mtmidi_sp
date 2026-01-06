@@ -23,6 +23,13 @@ from transformers.modeling_outputs import BaseModelOutputWithPastAndCrossAttenti
 
 #MusicgenDecoderLayer
 # https://github.com/huggingface/transformers/blob/ff13eb668aa03f151ded71636d723f2e490ad967/src/transformers/models/musicgen/modeling_musicgen.py#L304
+
+# MusicgenDecoder can be passed a config argt in its constructor of class MusicgenDecoderConfig defined:
+# https://github.com/huggingface/transformers/blob/main/src/transformers/models/musicgen/configuration_musicgen.py#L25
+
+# MusicgenDecoderConfig inherits from PreTrainedConfig:
+# https://github.com/huggingface/transformers/blob/main/src/transformers/configuration_utils.py#L362
+
 def forward_musicgendecoderlayer(
         self,
         hidden_states: torch.Tensor,
@@ -83,6 +90,8 @@ def forward_musicgendecoderlayer(
         residual = hidden_states
         hidden_states = self.final_layer_norm(hidden_states)
         hidden_states = self.activation_fn(self.fc1(hidden_states))
+        # MY CHANGE: taking representations post activation
+        post_activation = hidden_states.clone().detach()
         hidden_states = nn.functional.dropout(hidden_states, p=self.activation_dropout, training=self.training)
         hidden_states = self.fc2(hidden_states)
         hidden_states = nn.functional.dropout(hidden_states, p=self.dropout, training=self.training)
@@ -92,6 +101,10 @@ def forward_musicgendecoderlayer(
 
         if output_attentions:
             outputs += (self_attn_weights, cross_attn_weights)
+
+        # MY CHANGE: append post_activation representations
+        outputs += (post_activation,)
+
         return outputs
 
 # MusicgenDecoder
@@ -142,6 +155,9 @@ def forward_musicgendecoder(
 
             [What are attention masks?](../glossary#attention-mask)
         """
+
+        # MY NOTES: output_attentions is a method that returns a bool defined in PreTrainedConfig
+        # https://github.com/huggingface/transformers/blob/main/src/transformers/configuration_utils.py#L362
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
         output_hidden_states = (
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
