@@ -1,4 +1,5 @@
 import sys,os,time,argparse,copy,types
+from dataclasses import dataclass
 import librosa as lr
 from librosa import feature as lrf
 from transformers import AutoProcessor, MusicgenForConditionalGeneration
@@ -31,6 +32,115 @@ from transformers.modeling_outputs import BaseModelOutputWithPastAndCrossAttenti
 # MusicgenDecoderConfig inherits from PreTrainedConfig:
 # https://github.com/huggingface/transformers/blob/main/src/transformers/configuration_utils.py#L362
 
+
+# define a new class based off BaseModelOutputWithPastAndCrossAttentions 
+# https://github.com/huggingface/transformers/blob/main/src/transformers/modeling_outputs.py#L238
+@dataclass
+class BaseModelOutputWithPostActivations(ModelOutput):
+    """
+    Base class for model's outputs that may also contain a past key/values (to speed up sequential decoding).
+
+    Args:
+        last_hidden_state (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`):
+            Sequence of hidden-states at the output of the last layer of the model.
+
+            If `past_key_values` is used only the last hidden-state of the sequences of shape `(batch_size, 1,
+            hidden_size)` is output.
+        past_key_values (`Cache`, *optional*, returned when `use_cache=True` is passed or when `config.use_cache=True`):
+            It is a [`~cache_utils.Cache`] instance. For more details, see our [kv cache guide](https://huggingface.co/docs/transformers/en/kv_cache).
+
+            Contains pre-computed hidden-states (key and values in the self-attention blocks and optionally if
+            `config.is_encoder_decoder=True` in the cross-attention blocks) that can be used (see `past_key_values`
+            input) to speed up sequential decoding.
+        hidden_states (`tuple(torch.FloatTensor)`, *optional*, returned when `output_hidden_states=True` is passed or when `config.output_hidden_states=True`):
+            Tuple of `torch.FloatTensor` (one for the output of the embeddings, if the model has an embedding layer, +
+            one for the output of each layer) of shape `(batch_size, sequence_length, hidden_size)`.
+
+            Hidden-states of the model at the output of each layer plus the optional initial embedding outputs.
+        attentions (`tuple(torch.FloatTensor)`, *optional*, returned when `output_attentions=True` is passed or when `config.output_attentions=True`):
+            Tuple of `torch.FloatTensor` (one for each layer) of shape `(batch_size, num_heads, sequence_length,
+            sequence_length)`.
+
+            Attentions weights after the attention softmax, used to compute the weighted average in the self-attention
+            heads.
+        cross_attentions (`tuple(torch.FloatTensor)`, *optional*, returned when `output_attentions=True` and `config.add_cross_attention=True` is passed or when `config.output_attentions=True`):
+            Tuple of `torch.FloatTensor` (one for each layer) of shape `(batch_size, num_heads, sequence_length,
+            sequence_length)`.
+
+            Attentions weights of the decoder's cross-attention layer, after the attention softmax, used to compute the
+            weighted average in the cross-attention heads.
+    """
+
+    last_hidden_state: torch.FloatTensor | None = None
+    past_key_values: Cache | None = None
+    hidden_states: tuple[torch.FloatTensor, ...] | None = None
+    attentions: tuple[torch.FloatTensor, ...] | None = None
+    cross_attentions: tuple[torch.FloatTensor, ...] | None = None
+    post_activations: tuple[torch.FloatTensor, ...] | None = None
+
+
+# define a new class based off Seq2SeqModelOutput
+# https://github.com/huggingface/transformers/blob/main/src/transformers/modeling_outputs.py#L238
+@dataclass
+class Seq2SeqModelOutputWithPostActivations(ModelOutput):
+    """
+    Base class for model encoder's outputs that also contains : pre-computed hidden states that can speed up sequential
+    decoding.
+
+    Args:
+        last_hidden_state (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`):
+            Sequence of hidden-states at the output of the last layer of the decoder of the model.
+
+            If `past_key_values` is used only the last hidden-state of the sequences of shape `(batch_size, 1,
+            hidden_size)` is output.
+        past_key_values (`EncoderDecoderCache`, *optional*, returned when `use_cache=True` is passed or when `config.use_cache=True`):
+            It is a [`~cache_utils.EncoderDecoderCache`] instance. For more details, see our [kv cache guide](https://huggingface.co/docs/transformers/en/kv_cache).
+
+            Contains pre-computed hidden-states (key and values in the self-attention blocks and in the cross-attention
+            blocks) that can be used (see `past_key_values` input) to speed up sequential decoding.
+        decoder_hidden_states (`tuple(torch.FloatTensor)`, *optional*, returned when `output_hidden_states=True` is passed or when `config.output_hidden_states=True`):
+            Tuple of `torch.FloatTensor` (one for the output of the embeddings, if the model has an embedding layer, +
+            one for the output of each layer) of shape `(batch_size, sequence_length, hidden_size)`.
+
+            Hidden-states of the decoder at the output of each layer plus the optional initial embedding outputs.
+        decoder_attentions (`tuple(torch.FloatTensor)`, *optional*, returned when `output_attentions=True` is passed or when `config.output_attentions=True`):
+            Tuple of `torch.FloatTensor` (one for each layer) of shape `(batch_size, num_heads, sequence_length,
+            sequence_length)`.
+
+            Attentions weights of the decoder, after the attention softmax, used to compute the weighted average in the
+            self-attention heads.
+        cross_attentions (`tuple(torch.FloatTensor)`, *optional*, returned when `output_attentions=True` is passed or when `config.output_attentions=True`):
+            Tuple of `torch.FloatTensor` (one for each layer) of shape `(batch_size, num_heads, sequence_length,
+            sequence_length)`.
+
+            Attentions weights of the decoder's cross-attention layer, after the attention softmax, used to compute the
+            weighted average in the cross-attention heads.
+        encoder_last_hidden_state (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`, *optional*):
+            Sequence of hidden-states at the output of the last layer of the encoder of the model.
+        encoder_hidden_states (`tuple(torch.FloatTensor)`, *optional*, returned when `output_hidden_states=True` is passed or when `config.output_hidden_states=True`):
+            Tuple of `torch.FloatTensor` (one for the output of the embeddings, if the model has an embedding layer, +
+            one for the output of each layer) of shape `(batch_size, sequence_length, hidden_size)`.
+
+            Hidden-states of the encoder at the output of each layer plus the optional initial embedding outputs.
+        encoder_attentions (`tuple(torch.FloatTensor)`, *optional*, returned when `output_attentions=True` is passed or when `config.output_attentions=True`):
+            Tuple of `torch.FloatTensor` (one for each layer) of shape `(batch_size, num_heads, sequence_length,
+            sequence_length)`.
+
+            Attentions weights of the encoder, after the attention softmax, used to compute the weighted average in the
+            self-attention heads.
+    """
+
+    last_hidden_state: torch.FloatTensor | None = None
+    past_key_values: EncoderDecoderCache | None = None
+    decoder_hidden_states: tuple[torch.FloatTensor, ...] | None = None
+    decoder_attentions: tuple[torch.FloatTensor, ...] | None = None
+    cross_attentions: tuple[torch.FloatTensor, ...] | None = None
+    encoder_last_hidden_state: torch.FloatTensor | None = None
+    encoder_hidden_states: tuple[torch.FloatTensor, ...] | None = None
+    encoder_attentions: tuple[torch.FloatTensor, ...] | None = None
+    decoder_post_activations: tuple[torch.FloatTensor, ...] | None = None
+
+# https://github.com/huggingface/transformers/blob/main/src/transformers/models/musicgen/modeling_musicgen.py
 def forward_musicgendecoderlayer(
         self,
         hidden_states: torch.Tensor,
@@ -91,7 +201,7 @@ def forward_musicgendecoderlayer(
         residual = hidden_states
         hidden_states = self.final_layer_norm(hidden_states)
         hidden_states = self.activation_fn(self.fc1(hidden_states))
-        # MY CHANGE: taking representations post activation
+        # ===== MY CHANGE: taking representations post activation ======
         post_activation = hidden_states.clone().detach()
         hidden_states = nn.functional.dropout(hidden_states, p=self.activation_dropout, training=self.training)
         hidden_states = self.fc2(hidden_states)
@@ -103,13 +213,14 @@ def forward_musicgendecoderlayer(
         if output_attentions:
             outputs += (self_attn_weights, cross_attn_weights)
 
-        # MY CHANGE: append post_activation representations
+        # ====== MY CHANGE: append post_activation representations ===== 
         outputs += (post_activation,)
 
         return outputs
 
 # MusicgenDecoder
 # https://github.com/huggingface/transformers/blob/ff13eb668aa03f151ded71636d723f2e490ad967/src/transformers/models/musicgen/modeling_musicgen.py#L472
+# ===== MY CHANGE: changed return to include post_activations ====== 
 def forward_musicgendecoder(
         self,
         input_ids: Optional[torch.LongTensor] = None,
@@ -124,7 +235,7 @@ def forward_musicgendecoder(
         return_dict: Optional[bool] = None,
         cache_position: Optional[torch.Tensor] = None,
         **kwargs,
-    ) -> Union[tuple, BaseModelOutputWithPastAndCrossAttentions]:
+    ) -> Union[tuple, BaseModelOutputWithPostActivations]:
         r"""
         input_ids (`torch.LongTensor` of shape `(batch_size * num_codebooks, sequence_length)`):
             Indices of input sequence tokens in the vocabulary, corresponding to the sequence of audio codes.
@@ -207,7 +318,8 @@ def forward_musicgendecoder(
             input_shape,
             inputs_embeds,
         )
-
+        
+        # MY NOTES: adding the initial embeddings here
         # embed positions
         positions = self.embed_positions(input, past_key_values_length)
         hidden_states = inputs_embeds + positions.to(inputs_embeds.device)
@@ -217,6 +329,9 @@ def forward_musicgendecoder(
         all_hidden_states = () if output_hidden_states else None
         all_self_attns = () if output_attentions else None
         all_cross_attentions = () if (output_attentions and encoder_hidden_states is not None) else None
+
+        # ===== MY ADDITION: adding a place to accumulate post_activations =====
+        all_post_activations = ()
 
         for idx, decoder_layer in enumerate(self.layers):
             # add LayerDrop (see https://huggingface.co/papers/1909.11556 for description)
@@ -237,6 +352,11 @@ def forward_musicgendecoder(
                 cache_position=cache_position,
             )
             hidden_states = layer_outputs[0]
+
+            # ====== MY ADDITION: here is where I accumulate post activations ===== 
+            cur_post_activations = layer_outputs[-1]
+            all_post_activations += cur_post_activations
+
             if output_attentions:
                 all_self_attns += (layer_outputs[1],)
 
@@ -255,16 +375,20 @@ def forward_musicgendecoder(
                 for v in [hidden_states, past_key_values, all_hidden_states, all_self_attns, all_cross_attentions]
                 if v is not None
             )
-        return BaseModelOutputWithPastAndCrossAttentions(
+
+        # ===== MY CHANGE: Change to new custom class ======= 
+        return BaseModelOutputWithPostActivations(
             last_hidden_state=hidden_states,
             past_key_values=past_key_values,
             hidden_states=all_hidden_states,
             attentions=all_self_attns,
             cross_attentions=all_cross_attentions,
+            post_activations=all_post_activations,
         )
 
 # MusicgenModel
 # https://github.com/huggingface/transformers/blob/ff13eb668aa03f151ded71636d723f2e490ad967/src/transformers/models/musicgen/modeling_musicgen.py#L707
+# ===== MY CHANGE: changed return to include post_activations ====== 
 def forward_musicgenmodel(
         self,
         input_ids: Optional[torch.LongTensor] = None,
@@ -279,7 +403,7 @@ def forward_musicgenmodel(
         return_dict: Optional[bool] = None,
         cache_position: Optional[torch.Tensor] = None,
         **kwargs,
-    ) -> Union[tuple, BaseModelOutputWithPastAndCrossAttentions]:
+    ) -> Union[tuple, BaseModelOutputWithPostActivations]:
         r"""
         input_ids (`torch.LongTensor` of shape `(batch_size * num_codebooks, sequence_length)`):
             Indices of input sequence tokens in the vocabulary, corresponding to the sequence of audio codes.
@@ -336,17 +460,20 @@ def forward_musicgenmodel(
         if not return_dict:
             return decoder_outputs
 
-        return BaseModelOutputWithPastAndCrossAttentions(
+        # ===== MY CHANGE: Change to new custom class ======= 
+        return BaseModelOutputWithPostActivations(
             last_hidden_state=decoder_outputs.last_hidden_state,
             past_key_values=decoder_outputs.past_key_values,
             hidden_states=decoder_outputs.hidden_states,
             attentions=decoder_outputs.attentions,
             cross_attentions=decoder_outputs.cross_attentions,
+            post_activations=decoder_outputs.post_activations,
         )
 
 
 #MusicforConditionalGeneration forward
 # https://github.com/huggingface/transformers/blob/main/src/transformers/models/musicgen/modeling_musicgen.py#L1606C1-L1781C1
+# ===== MY CHANGE: changed return to include post_activations ====== 
 def mcg_forward(
     self,
     input_ids: torch.LongTensor | None = None,
@@ -365,7 +492,7 @@ def mcg_forward(
     output_hidden_states: bool | None = None,
     return_dict: bool | None = None,
     **kwargs,
-) -> tuple | Seq2SeqLMOutput:
+) -> tuple | Seq2SeqLMOutputWithPostActivations:
     r"""
     padding_mask (`torch.BoolTensor` of shape `(batch_size, sequence_length)`, *optional*):
         Mask to avoid performing attention on padding token indices. Mask values selected in `[0, 1]`:
@@ -511,7 +638,7 @@ def mcg_forward(
     if not return_dict:
         return decoder_outputs + encoder_outputs
 
-    return Seq2SeqLMOutput(
+    return Seq2SeqLMOutputWithPostActivations(
         loss=decoder_outputs.loss,
         logits=decoder_outputs.logits,
         past_key_values=decoder_outputs.past_key_values,
@@ -521,6 +648,7 @@ def mcg_forward(
         encoder_last_hidden_state=encoder_outputs.last_hidden_state,
         encoder_hidden_states=encoder_outputs.hidden_states,
         encoder_attentions=encoder_outputs.attentions,
+        decoder_post_activations=decoder_outputs.post_activations,
     )
 
 
@@ -533,202 +661,20 @@ def override_mcg_forwards(mcg_instance):
         l.forward = types.MethodType(forward_musicgendecoderlayer, l)
     mcg_dm.forward = types.MethodType(forward_musicgendecoder, mcg_dm)
     mcg_model.forward = types.MethodType(forward_musicgenmodel, mcg_model)
-"""
-def get_hf_audio(f, model_sr = 44100, normalize=True):
-    audio, aud_sr = uhf.get_from_entry_syntheory_audio(f, mono=True, normalize =normalize, dur = dur)
-    if aud_sr != model_sr:
-        audio = lr.resample(audio, orig_sr=aud_sr, target_sr=model_sr)
-    return audio
 
 
+models = ['musicgen-small', 'musicgen-medium', 'musicgen-large']
+cur_model_type = models[0]
+model_str = f"facebook/{cur_model_type}" 
 
-def path_handler(f, using_hf=False, model_sr = 44100, wav_path = None, model_type = 'jukebox', dur = 4., normalize = True, out_ext = 'dat', logfile_handle=None):
-    out_fname = None
-    audio = None
-    in_dir = um.by_projpath(wav_path)
-    in_fpath = None
-    out_fname = None
-    fname = None
-    if using_hf == False:
-        print(f'loading {f}', file=logfile_handle)
-        in_fpath = os.path.join(in_dir, f)
-        out_fname = um.ext_replace(f, new_ext=out_ext)
-        fname = um.ext_replace(f, new_ext='')
-        # don't need to load audio if jukebox
-        if model_type != 'jukebox':
-            audio = um.load_wav(f, dur = dur, normalize = normalize, sr = model_sr,  load_dir = in_dir)
-    else:
-        hf_path = f['audio']['path']
-        print(f"loading {hf_path}", file=lf)
-        out_fname = um.ext_replace(hf_path, new_ext=out_ext)
-        fname = um.ext_replace(hf_path, new_ext='')
-    aud_sr = None
-    if using_hf == True:
-        audio, aud_sr = uhf.get_from_entry_syntheory_audio(f, mono=True, normalize =normalize, dur = dur)
-        if aud_sr != model_sr:
-            audio = lr.resample(audio, orig_sr=aud_sr, target_sr=model_sr)
-    return {'in_fpath': in_fpath, 'out_fname': out_fname, 'audio': audio, 'fname': fname}
+device = 'cpu'
+if torch.cuda.is_available() == True:
+    device = 'cuda'
+    torch.cuda.empty_cache()
+    torch.set_default_device(device)
 
+proc = AutoProcessor.from_pretrained(model_str)
+model = MusicgenForConditionalGeneration.from_pretrained(model_str, device_map=device)
+model_sr = model.config.audio_encoder.sampling_rate
 
-def get_musicgen_encoder_embeddings(model, proc, audio, meanpool = True, model_sr = 32000, device='cpu'):
-    procd = proc(audio = audio, sampling_rate = model_sr, padding=True, return_tensors = 'pt')
-    procd.to(device)
-    enc = model.get_audio_encoder()
-    out = procd['input_values']
-    
-    # iterating through layers as in original syntheory codebase
-    # https://github.com/brown-palm/syntheory/blob/main/embeddings/models.py
-    for layer in enc.encoder.layers:
-        out = layer(out)
-
-    # output shape, (1, 128, 200), where 200 are the timesteps
-    # so average across timesteps for max pooling
-
-
-    if meanpool == True:
-        # gives shape (128)
-        out = torch.mean(out,axis=2).squeeze()
-    else:
-        # still need to squeeze
-        # gives shape (128, 200)
-        out = out.squeeze()
-    return out.detach().cpu().numpy()
-
-def get_musicgen_lm_hidden_states(model, proc, audio, text="", meanpool = True, model_sr = 32000, device = 'cpu'):
-    procd = proc(audio = audio, text = text, sampling_rate = model_sr, padding=True, return_tensors = 'pt')
-    procd.to(device)
-    outputs = model(**procd, output_attentions=False, output_hidden_states=True)
-    dhs = None
-    
-    #dat = None
-
-    # hidden
-    # outputs is a tuple of tensors with  shape (batch_size, seqlen, dimension) with 1 per layer
-    # torch stack makes it so we have (num_layers, batch_size, seqlen, dimension)
-    # then we average over seqlen in the meanpool case
-    # then squeeze to get rid of the 1 dim (if batch_size == 1)
-    # final shape is (num_layers, batch_size, dim)  (or (num_layers, dim) if bs=1)
-    
-    # attentions
-    # outputs is a tuple of tensors with  shape (batch_size, num_heads, seqlen, seqlen) with 1 per layer
-    # torch stack makes it so we have (num_layers, batch_size, num_heads, seqlen, sequlen)
-    # then we average over seqlens in the meanpool case
-    # then squeeze to get rid of the 1 dim (if batch_size == 1)
-    # final shape is (num_layers, batch_size, num_heads) (or (num_layers, num_heads) if bs = 1)
-
-    if meanpool == True:
-        dhs = torch.stack(outputs.decoder_hidden_states).mean(axis=2).squeeze()
-        #dat = torch.stack(outputs.decoder_attentions).mean(axis=(3,4)).squeeze()
-    else:
-        dhs = torch.stack(outputs.decoder_hidden_states).squeeze()
-        #dat = torch.stack(outputs.decoder_attentions).squeeze()
-    return dhs.detach().cpu().numpy()
-
-
-def get_embeddings(cur_act_type, cur_dataset, layers_per = 4, layer_num = -1, normalize = True, dur = 4., use_64bit = True, logfile_handle=None, recfile_handle = None, memmap = True, pickup = False, other_projdir = ''):
-    cur_model_type = um.get_model_type(cur_act_type)
-    model_sr = um.model_sr[cur_model_type]
-    model_longhand = um.model_longhand[cur_act_type]
-
-    using_hf = cur_dataset in um.hf_datasets
-    # musicgen stuff
-    device = 'cpu'
-    num_layers = None
-    proc = None
-    model = None
-    text = ""
-    wav_path = os.path.join(um.by_projpath('wav'), cur_dataset)
-    cur_pathlist = None
-    out_ext = 'dat'
-    if memmap == False:
-        out_ext = 'npy'
-    if using_hf == True:
-        cur_pathlist = uhf.load_syntheory_train_dataset(cur_dataset)
-    else:
-        cur_pathlist = um.path_list(wav_path)
-
-
-    if torch.cuda.is_available() == True:
-        device = 'cuda'
-        torch.cuda.empty_cache()
-        torch.set_default_device(device)
-
-
-    model_str = f"facebook/{cur_model_type}" 
-
-    proc = AutoProcessor.from_pretrained(model_str)
-    model = MusicgenForConditionalGeneration.from_pretrained(model_str, device_map=device)
-    model_sr = model.config.audio_encoder.sampling_rate
-
-    #print('file,is_extracted', file=rf)
-
-    # existing files removing latest (since it may be partially written) and removing extension for each of checking
-    existing_name_set = None
-    if pickup == True:
-        _file_dir = um.get_model_act_path(cur_act_type, acts_folder = acts_folder, dataset=cur_dataset, return_relative = False, make_dir = False, other_projdir = other_projdir)
-        existing_files = um.remove_latest_file(_file_dir, is_relative = False)
-        existing_name_set = set([um.get_basename(_f, with_ext = False) for _f in existing_files])
-    for fidx,f in enumerate(cur_pathlist):
-        if pickup == True:
-            cur_name = um.get_basename(f, with_ext = False)
-            if cur_name in existing_name_set:
-                continue
-        fdict = path_handler(f, model_sr = model_sr, wav_path = wav_path, normalize = normalize, dur = dur,model_type = cur_model_type, using_hf = using_hf, logfile_handle=logfile_handle, out_ext = out_ext)
-        #outpath = os.path.join(out_dir, outname)
-        out_fname = fdict['out_fname']
-        fpath = fdict['in_fpath']
-        audio = fdict['audio']
-        # store by cur_act_type (model shorthand)
-        emb_file = None
-        np_arr = None
-        if memmap == True:
-            emb_file = um.get_embedding_file(cur_act_type, acts_folder=acts_folder, dataset=cur_dataset, fname=out_fname, use_64bit = use_64bit, write=True, use_shape = None, other_projdir = other_projdir)
-        if cur_model_type == 'jukebox':
-            print(f'--- extracting jukebox for {f} with {layers_per} layers at a time ---', file=logfile_handle)
-            # note that layers are 1-indexed in jukebox
-            # so let's 0-idx and then add 1 when feeding into jukebox fn
-            layer_gen = (list(range(l, min(um.model_num_layers['jukebox'], l + layers_per))) for l in range(0,um.model_num_layers['jukebox'], layers_per))
-            has_last_layer = False
-            if memmap == False:
-                np_shape = um.get_embedding_shape(cur_act_type)
-                np_arr = np.zeros(np_shape)
-            if layer_num > 0:
-                # 0-idx from 1-idxed argt
-                layer_gen = ([l-1] for l in [layer_num])
-            for layer_arr in layer_gen:
-                # 1-idx for passing into fn
-                j_idx = [l+1 for l in layer_arr]
-                has_last_layer = um.model_num_layers['jukebox'] in j_idx
-                print(f'extracting layers {j_idx}', file=logfile_handle)
-                rep_arr = get_jukebox_layer_embeddings(fpath=fpath, audio = audio, layers=j_idx)
-                if memmap == True:
-                    emb_file[layer_arr,:] = rep_arr
-                    emb_file.flush()
-                else:
-                    np_arr[layer_arr,:] = rep_arr
-                    # should be the last layer to save
-                    if has_last_layer == True:
-                        um.save_npy(np_arr, out_fname, cur_act_type, acts_folder = acts_folder, dataset=cur_dataset, other_projdir = other_projdir)
-        else:
-            audio_ipt = fdict['audio']
-            if model_longhand == "musicgen-encoder":
-                print(f'--- extracting musicgen-encoder for {f} ---', file=logfile_handle)
-
-                rep_arr = get_musicgen_encoder_embeddings(model, proc, audio_ipt, meanpool = True, model_sr = model_sr, device=device)
-                if memmap == True:
-                    emb_file[:,:] = rep_arr
-                    emb_file.flush()
-                else:
-                    um.save_npy(rep_arr, out_fname, cur_act_type, acts_folder = acts_folder, dataset=cur_dataset, other_projdir = other_projdir)
-            else:
-
-                print(f'--- extracting musicgen_lm for {f} ---', file=logfile_handle)
-                rep_arr =  get_musicgen_lm_hidden_states(model, proc, audio_ipt, text="", meanpool = True, model_sr = model_sr, device=device)
-                if memmap == True:
-                    emb_file[:,:] = rep_arr
-                    emb_file.flush()
-                else:
-                    um.save_npy(rep_arr, out_fname, cur_act_type, acts_folder = acts_folder, dataset=cur_dataset, other_projdir = other_projdir)
-        fname = fdict['fname']
-        print(f'{fname},1', file=recfile_handle)
-"""
+override_mcg_forwards(model)
