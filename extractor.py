@@ -82,7 +82,7 @@ class BaseModelOutputWithPostActivations(ModelOutput):
 # define a new class based off Seq2SeqModelOutput
 # https://github.com/huggingface/transformers/blob/main/src/transformers/modeling_outputs.py#L238
 @dataclass
-class Seq2SeqModelOutputWithPostActivations(ModelOutput):
+class Seq2SeqLMOutputWithPostActivations(ModelOutput):
     """
     Base class for model encoder's outputs that also contains : pre-computed hidden states that can speed up sequential
     decoding.
