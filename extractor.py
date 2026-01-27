@@ -8,7 +8,7 @@ import numpy as np
 import torch
 from distutils.util import strtobool
 from transformers.cache_utils import Cache, DynamicCache,EncoderDecoderCache
-from transformers.modeling_outputs import BaseModelOutputWithPastAndCrossAttentions, BaseModelOutput, Seq2SeqLMOutput
+from transformers.modeling_outputs import BaseModelOutputWithPastAndCrossAttentions, BaseModelOutput, Seq2SeqLMOutput, ModelOutput
 
 # need to override forward method of MusicgenDecoderLayer
 # https://github.com/huggingface/transformers/blob/ff13eb668aa03f151ded71636d723f2e490ad967/src/transformers/models/musicgen/modeling_musicgen.py#L304
