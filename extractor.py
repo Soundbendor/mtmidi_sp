@@ -1,4 +1,5 @@
 import sys,os,time,argparse,copy,types
+import util as UM
 from dataclasses import dataclass
 import librosa as lr
 from librosa import feature as lrf
@@ -662,19 +663,204 @@ def override_mcg_forwards(mcg_instance):
     mcg_dm.forward = types.MethodType(forward_musicgendecoder, mcg_dm)
     mcg_model.forward = types.MethodType(forward_musicgenmodel, mcg_model)
 
+### porting old code from mtmidi
+def get_print_name(dataset, model_size, is_csv = False, normalize = True, timestamp = 0):
+    base_fname = f'{dataset}_musicgen-{model_size}-{timestamp}'
+    if normalize == True:
+        base_fname = f'{dataset}_musicgen-{model_size}_norm-{timestamp}'
+    ret = None
+    if is_csv == False:
+        ret = f'{base_fname}.log'
+    else:
+        ret = f'{base_fname}.csv'
+    return ret
 
-models = ['musicgen-small', 'musicgen-medium', 'musicgen-large']
-cur_model_type = models[0]
-model_str = f"facebook/{cur_model_type}" 
+def path_handler(in_filepath, using_hf=False, model_sr = 44100, dur = 4., normalize = True, out_ext = 'dat', logfile_handle=None):
+    out_fname = None
+    audio = None
+    out_fname = None
+    fbasename = None
+    fold_num = -1 
+    if using_hf == False:
+        print(f'loading {f}', file=logfile_handle)
+        fbasename = UM.get_basename(in_filepath)
+        fold_num = UM.get_fold_num_from_filepath(in_filepath)
+        out_fname = f'{fbasename}.{out_ext}'
+        # don't need to load audio if jukebox
+        if model_type != 'jukebox':
+            audio = UM.load_wav(in_filepath, dur = dur, normalize = normalize, sr = model_sr)
+    else:
+        hf_path = f['audio']['path']
+        print(f"loading {hf_path}", file=lf)
+        out_fname = UM.ext_replace(hf_path, new_ext=out_ext)
+        fbasename = UM.ext_replace(hf_path, new_ext='')
+    aud_sr = None
+    if using_hf == True:
+        fbasename = UM.get_basename(in_filepath)
+        audio, aud_sr = UM.get_from_entry_syntheory_audio(fbasename, mono=True, normalize =normalize, dur = dur)
+        if aud_sr != model_sr:
+            audio = lr.resample(audio, orig_sr=aud_sr, target_sr=model_sr)
+    return {'in_fpath': fpath, 'out_fname': out_fname, 'audio': audio, 'fname': fbasename, 'fold_num': fold_num}
 
-device = 'cpu'
-if torch.cuda.is_available() == True:
-    device = 'cuda'
-    torch.cuda.empty_cache()
-    torch.set_default_device(device)
+# same as get_musicgen_lm_hidden_states but swap out outputs.decoder_hidden_states with decoder_post_activations
+def get_musicgen_lm_postacts(model, proc, audio, text="", meanpool = True, model_sr = 32000, device = 'cpu'):
+    procd = proc(audio = audio, text = text, sampling_rate = model_sr, padding=True, return_tensors = 'pt')
+    procd.to(device)
+    outputs = model(**procd, output_attentions=False, output_hidden_states=True)
+    dhs = None
+    
+    #dat = None
 
-proc = AutoProcessor.from_pretrained(model_str)
-model = MusicgenForConditionalGeneration.from_pretrained(model_str, device_map=device)
-model_sr = model.config.audio_encoder.sampling_rate
+    # hidden
+    # outputs is a tuple of tensors with  shape (batch_size, seqlen, dimension) with 1 per layer
+    # torch stack makes it so we have (num_layers, batch_size, seqlen, dimension)
+    # then we average over seqlen in the meanpool case
+    # then squeeze to get rid of the 1 dim (if batch_size == 1)
+    # final shape is (num_layers, batch_size, dim)  (or (num_layers, dim) if bs=1)
+    
+    # attentions
+    # outputs is a tuple of tensors with  shape (batch_size, num_heads, seqlen, seqlen) with 1 per layer
+    # torch stack makes it so we have (num_layers, batch_size, num_heads, seqlen, sequlen)
+    # then we average over seqlens in the meanpool case
+    # then squeeze to get rid of the 1 dim (if batch_size == 1)
+    # final shape is (num_layers, batch_size, num_heads) (or (num_layers, num_heads) if bs = 1)
 
-override_mcg_forwards(model)
+    if meanpool == True:
+        dhs = torch.stack(outputs.decoder_post_activations).mean(axis=2).squeeze()
+        #dat = torch.stack(outputs.decoder_attentions).mean(axis=(3,4)).squeeze()
+    else:
+        dhs = torch.stack(outputs.decoder_post_activations).squeeze()
+        #dat = torch.stack(outputs.decoder_attentions).squeeze()
+    return dhs.detach().cpu().numpy()
+
+
+def get_postacts(model_size, cur_dataset, normalize = True, dur = 4., use_64bit = True, logfile_handle=None, recfile_handle = None, memmap = True, pickup = False, fold_num = -1, from_dir = "", to_dir = ""):
+    
+    using_hf = cur_dataset in UM.hf_datasets
+    # musicgen stuff
+    device = 'cpu'
+    num_layers = None
+    proc = None
+    model = None
+    text = ""
+    wav_path = os.path.join(UM.by_projpath('wav'), cur_dataset)
+    if len(from_dir) > 0:
+        wav_path = os.path.join(from_dir, 'wav', cur_dataset)
+    cur_pathlist = None
+    out_ext = 'dat'
+    if memmap == False:
+        out_ext = 'npy'
+    if using_hf == True:
+        fold_num = -1 # don't care about fold folders
+        cur_pathlist = UM.load_syntheory_train_dataset(cur_dataset)
+    else:
+        cur_pathlist = UM.filepath_list(wav_path)
+    
+
+    device = 'cpu'
+    if torch.cuda.is_available() == True:
+        device = 'cuda'
+        torch.cuda.empty_cache()
+        torch.set_default_device(device)
+    
+    model_str = UM.get_hf_model_str(model_size) 
+    proc = AutoProcessor.from_pretrained(model_str)
+    model = MusicgenForConditionalGeneration.from_pretrained(model_str, device_map=device)
+    model_sr = model.config.audio_encoder.sampling_rate
+
+    override_mcg_forwards(model)
+
+
+
+    # existing files removing latest (since it may be partially written) and removing extension for each of checking
+    existing_name_set = None
+    if pickup == True:
+        # pass -1 for fold_num to omit fold_num folder since remove_latest_file takes care of it
+        _file_dir = um.get_model_postacts_path(model_size, dataset=cur_dataset, return_relative = False, make_dir = False, other_projdir = to_dir, fold_num=-1)
+        existing_files = UM.remove_latest_file(_file_dir, is_relative = False, fold_num = fold_num)
+        existing_name_set = set([UM.get_basename(_f, with_ext = False) for _f in existing_files])
+    for fidx,fpath in enumerate(cur_pathlist):
+        if pickup == True:
+            cur_name = UM.get_basename(fpath, with_ext = False)
+            if cur_name in existing_name_set:
+                continue
+        fdict = path_handler(fpath, model_sr = model_sr, normalize = normalize, dur = dur,using_hf = using_hf, logfile_handle=logfile_handle, out_ext = out_ext)
+        #outpath = os.path.join(out_dir, outname)
+        out_fname = fdict['out_fname']
+        fpath = fdict['in_fpath']
+        audio = fdict['audio']
+        fold_num = fdict['fold_num']
+        # store by model_size (and fold_num if not using_hf)
+        emb_file = None
+        np_arr = None
+        if memmap == True:
+            emb_file = UM.get_postacts_file(model_size, dataset=cur_dataset, fname=out_fname, use_64bit = use_64bit, write=True, use_shape = None, other_projdir = to_dir, fold_num = fold_num)
+        print(f'--- extracting musicgen_lm for {f} ---', file=logfile_handle)
+        rep_arr =  get_musicgen_lm_postacts(model, proc, audio_ipt, text="", meanpool = True, model_sr = model_sr, device=device)
+        if memmap == True:
+            emb_file[:,:] = rep_arr
+            emb_file.flush()
+        else:
+            UM.save_npy(rep_arr, out_fname, model_size, dataset=cur_dataset, other_projdir = to_dir)
+        fname = fdict['fname']
+        print(f'{fname},1', file=recfile_handle)
+
+
+
+
+
+if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument("-ub", "--use_64bit", type=strtobool, default=True, help="use 64-bit")
+    parser.add_argument("-ds", "--dataset", type=str, default="polyrhythms", help="dataset")
+    parser.add_argument("-ms", "--model_size", type=str, default="small", help="small, medium, or large")
+    parser.add_argument("-lp", "--layers_per", type=int, default=4, help="layers per loop if doing all layers (for jukebox)")
+    parser.add_argument("-l", "--layer_num", type=int, default=-1, help="1-indexed layer num (all if < 0, for jukebox)")
+    parser.add_argument("-n", "--normalize", type=strtobool, default=True, help="normalize audio")
+    parser.add_argument("-m", "--memmap", type=strtobool, default=True, help="save as memmap, else save as npy")
+    parser.add_argument("-db", "--debug", type=strtobool, default=False, help="debug mode")
+    parser.add_argument("-p", "--pickup", type=strtobool, default=False, help="pickup where script left off")
+    parser.add_argument("-tsh", "--to_share", type=strtobool, default=False, help="save on share partition")
+    parser.add_argument("-fsh", "--from_share", type=strtobool, default=False, help="load on share partition")
+    parser.add_argument("-fn", "--fold_num", type=int, default=-1, help="fold number to extract (-1 for no folds, 0 for all folds, else specific fold)")
+
+    
+    args = parser.parse_args()
+    use_64bit = args.use_64bit
+    lnum = args.layer_num
+    lper = args.layers_per
+    memmap = args.memmap
+    normalize = args.normalize
+    model_size = args.model_size
+    dataset = args.dataset
+    debug = args.debug
+    pickup = args.pickup
+    to_share = args.to_share
+    from_share = args.from_share
+    fold_num = args.fold_num
+    # exit if not a "real" dataset
+    logdir = UM.by_projpath(subpath='log', make_dir = True)
+    timestamp = int(time.time() * 1000)
+
+    from_dir = ""
+    if args.from_share == True:
+        from_dir = UM.share_path
+    if args.to_share == True:
+        to_dir = UM.share_path
+    # miscellaneous logs
+    log_fname = get_print_name(dataset, model_size, is_csv = False, normalize = normalize, timestamp = timestamp)
+    rec_fname = get_print_name(dataset, model_size, is_csv = True, normalize = normalize, timestamp = timestamp)
+    log_fpath = os.path.join(logdir, log_fname)
+    rec_fpath = os.path.join(logdir, rec_fname)
+    if debug == True:
+        exit()
+    if (dataset in um.all_datasets) == False:
+        sys.exit('not a dataset')
+    else:
+        lf = open(log_fpath, 'a')
+        rf = open(rec_fpath, 'w')
+        print(f'=== running extraction for {dataset} with {model_size} at {timestamp} ===', file=lf)
+        get_postacts(model_size, dataset, normalize = normalize, dur = dur, use_64bit = use_64bit, logfile_handle=lf, recfile_handle=rf, memmap = memmap, pickup = pickup, fold_num = fold_num, from_dir = from_dir, to_dir = to_dir)
+        lf.close()
+        rf.close()
