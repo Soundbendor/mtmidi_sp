@@ -756,7 +756,6 @@ def get_postacts(model_size, cur_dataset, normalize = True, dur = 4., use_64bit 
     else:
         cur_pathlist = UM.filepath_list(wav_path, fold_num=fold_num, ignore_exts = set(['.csv']))
 
-    """
     device = 'cpu'
     if torch.cuda.is_available() == True:
         device = 'cuda'
@@ -769,9 +768,7 @@ def get_postacts(model_size, cur_dataset, normalize = True, dur = 4., use_64bit 
     model_sr = model.config.audio_encoder.sampling_rate
 
     override_mcg_forwards(model)
-    """
 
-    model_sr = 32000
     # existing files removing latest (since it may be partially written) and removing extension for each of checking
     existing_name_set = None
     if pickup == True:
@@ -813,7 +810,7 @@ def get_postacts(model_size, cur_dataset, normalize = True, dur = 4., use_64bit 
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument("-ub", "--use_64bit", type=strtobool, default=True, help="use 64-bit")
+    parser.add_argument("-ub", "--use_64bit", type=strtobool, default=False, help="use 64-bit")
     parser.add_argument("-ds", "--dataset", type=str, default="polyrhythms", help="dataset")
     parser.add_argument("-ms", "--model_size", type=str, default="small", help="small, medium, or large")
     parser.add_argument("-l", "--layer_num", type=int, default=-1, help="1-indexed layer num (all if < 0, for jukebox)")
