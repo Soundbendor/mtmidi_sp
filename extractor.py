@@ -688,8 +688,7 @@ def path_handler(in_filepath, using_hf=False, model_sr = 44100, dur = 4., normal
         fold_num = UM.get_fold_num_from_filepath(in_filepath)
         out_fname = f'{fbasename}.{out_ext}'
         # don't need to load audio if jukebox
-        if model_type != 'jukebox':
-            audio = UM.load_wav(in_filepath, dur = dur, normalize = normalize, sr = model_sr)
+        audio = UM.load_wav(in_filepath, dur = dur, normalize = normalize, sr = model_sr)
     else:
         hf_path = f['audio']['path']
         print(f"loading {hf_path}", file=lf)
@@ -701,7 +700,7 @@ def path_handler(in_filepath, using_hf=False, model_sr = 44100, dur = 4., normal
         audio, aud_sr = UM.get_from_entry_syntheory_audio(fbasename, mono=True, normalize =normalize, dur = dur)
         if aud_sr != model_sr:
             audio = lr.resample(audio, orig_sr=aud_sr, target_sr=model_sr)
-    return {'in_fpath': fpath, 'out_fname': out_fname, 'audio': audio, 'fname': fbasename, 'fold_num': fold_num}
+    return {'in_fpath': in_filepath, 'out_fname': out_fname, 'audio': audio, 'fname': fbasename, 'fold_num': fold_num}
 
 # same as get_musicgen_lm_hidden_states but swap out outputs.decoder_hidden_states with decoder_post_activations
 def get_musicgen_lm_postacts(model, proc, audio, text="", meanpool = True, model_sr = 32000, device = 'cpu'):
@@ -756,8 +755,8 @@ def get_postacts(model_size, cur_dataset, normalize = True, dur = 4., use_64bit 
         cur_pathlist = UM.load_syntheory_train_dataset(cur_dataset)
     else:
         cur_pathlist = UM.filepath_list(wav_path, fold_num=fold_num, ignore_exts = set(['.csv']))
-    
 
+    """
     device = 'cpu'
     if torch.cuda.is_available() == True:
         device = 'cuda'
@@ -770,9 +769,9 @@ def get_postacts(model_size, cur_dataset, normalize = True, dur = 4., use_64bit 
     model_sr = model.config.audio_encoder.sampling_rate
 
     override_mcg_forwards(model)
+    """
 
-
-
+    model_sr = 32000
     # existing files removing latest (since it may be partially written) and removing extension for each of checking
     existing_name_set = None
     if pickup == True:
@@ -788,15 +787,16 @@ def get_postacts(model_size, cur_dataset, normalize = True, dur = 4., use_64bit 
         fdict = path_handler(fpath, model_sr = model_sr, normalize = normalize, dur = dur,using_hf = using_hf, logfile_handle=logfile_handle, out_ext = out_ext)
         #outpath = os.path.join(out_dir, outname)
         out_fname = fdict['out_fname']
-        fpath = fdict['in_fpath']
-        audio = fdict['audio']
+        in_fpath = fdict['in_fpath']
+        audio_ipt = fdict['audio']
         fold_num = fdict['fold_num']
         # store by model_size (and fold_num if not using_hf)
         emb_file = None
         np_arr = None
+        f = UM.get_basename(in_fpath) 
         if memmap == True:
             emb_file = UM.get_postacts_file(model_size, dataset=cur_dataset, fname=out_fname, use_64bit = use_64bit, write=True, use_shape = None, other_projdir = to_dir, fold_num = fold_num)
-        print(f'--- extracting musicgen_lm for {f} ---', file=logfile_handle)
+        print(f'--- extracting musicgen_lm for {fpath} ---', file=logfile_handle)
         rep_arr =  get_musicgen_lm_postacts(model, proc, audio_ipt, text="", meanpool = True, model_sr = model_sr, device=device)
         if memmap == True:
             emb_file[:,:] = rep_arr
@@ -823,7 +823,7 @@ if __name__ == '__main__':
     parser.add_argument("-p", "--pickup", type=strtobool, default=False, help="pickup where script left off")
     parser.add_argument("-tsh", "--to_share", type=strtobool, default=False, help="save on share partition")
     parser.add_argument("-fsh", "--from_share", type=strtobool, default=False, help="load on share partition")
-    parser.add_argument("-fn", "--fold_num", type=int, default=-1, help="fold number to extract (-1 for no folds, 0 for all folds, else specific fold)")
+    parser.add_argument("-fn", "--fold_num", type=int, default=0, help="fold number to extract (-1 for no folds, 0 for all folds, else specific fold)")
 
     
     args = parser.parse_args()

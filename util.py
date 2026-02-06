@@ -1,4 +1,5 @@
 import os
+import numpy as np
 import datasets as HFDS
 import librosa
 
@@ -85,15 +86,15 @@ def get_model_postacts_path(model_size, dataset='polyrhythms', return_relative =
 def filepath_list(file_dir, fold_num=-1, ignore_exts = set(['.csv'])):
     files = []
     if fold_num < 0:
-        files = [os.path.join(file_dir, x) for x in os.listdir(file_dir) if os.path.splitext(x)[1] not in ignore_exts]
+        files = [os.path.join(file_dir, x) for x in os.listdir(file_dir) if os.path.splitext(x)[-1] not in ignore_exts]
     elif fold_num == 0:
         for i in range(1,num_folds+1):
             fold_dir = os.path.join(file_dir, f'fold_{i}')
-            cur_files = [os.path.join(fold_dir, x) for x in os.listdir(fold_dir) if os.path.splitext(x)[1] not in ignore_exts]
+            cur_files = [os.path.join(fold_dir, x) for x in os.listdir(fold_dir) if os.path.splitext(x)[-1] not in ignore_exts]
             files += cur_files
     else:
         fold_dir = os.path.join(file_dir, f'fold_{fold_num}')
-        files = [os.path.join(fold_dir, x) for x in os.listdir(fold_dir) if os.path.splitext(x)[1] not in ignore_exts]
+        files = [os.path.join(fold_dir, x) for x in os.listdir(fold_dir) if os.path.splitext(x)[-1] not in ignore_exts]
     return files
 
 
@@ -151,7 +152,7 @@ def get_postacts_shape(model_size):
 
 # use_shape argument overrides shape getting (useful for baselines)
 def get_postacts_file(model_size, dataset='polyrhythms', fname='', write = True, use_64bit = True, use_shape = None, other_projdir = '', fold_num = -1):
-    modelpath = get_model_postacs_path(model_size, postacts_folder = postacts_folder, dataset = dataset, return_relative = False, make_dir = write, other_projdir = other_projdir, fold_num = fold_num)
+    modelpath = get_model_postacts_path(model_size, dataset = dataset, return_relative = False, make_dir = write, other_projdir = other_projdir, fold_num = fold_num)
     fpath = os.path.join(modelpath, fname)
     fp = None
     dtype = 'float32'
