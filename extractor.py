@@ -1,4 +1,5 @@
 import sys,os,time,argparse,copy,types
+from torch import nn
 import util as UM
 from dataclasses import dataclass
 import librosa as lr
@@ -7,6 +8,7 @@ from transformers import AutoProcessor, MusicgenForConditionalGeneration
 from typing import TYPE_CHECKING, Any, Optional, Union
 import numpy as np
 import torch
+import random
 from distutils.util import strtobool
 from transformers.cache_utils import Cache, DynamicCache,EncoderDecoderCache
 from transformers.modeling_outputs import BaseModelOutputWithPastAndCrossAttentions, BaseModelOutput, Seq2SeqLMOutput, ModelOutput
@@ -357,7 +359,7 @@ def forward_musicgendecoder(
 
             # ====== MY ADDITION: here is where I accumulate post activations ===== 
             cur_post_activations = layer_outputs[-1]
-            all_post_activations += cur_post_activations
+            all_post_activations += (cur_post_activations,)
 
             if output_attentions:
                 all_self_attns += (layer_outputs[1],)
@@ -473,10 +475,12 @@ def forward_musicgenmodel(
         )
 
 
+
+
 #MusicforConditionalGeneration forward
 # https://github.com/huggingface/transformers/blob/main/src/transformers/models/musicgen/modeling_musicgen.py#L1606C1-L1781C1
 # ===== MY CHANGE: changed return to include post_activations ====== 
-def mcg_forward(
+def forward_mgc(
     self,
     input_ids: torch.LongTensor | None = None,
     attention_mask: torch.BoolTensor | None = None,
@@ -655,14 +659,15 @@ def mcg_forward(
 
 
 
-def override_mcg_forwards(mcg_instance):
-    mcg_model = mcg_instance.decoder.model
-    mcg_dm = mcg_model.decoder
-    mcg_layers = mcg_model.decoder.layers
-    for l in mcg_layers:
+def override_mcg_forwards(mgc_instance):
+    mgc_model = mgc_instance.decoder.model
+    mgc_dm = mgc_model.decoder
+    mgc_layers = mgc_model.decoder.layers
+    for l in mgc_layers:
         l.forward = types.MethodType(forward_musicgendecoderlayer, l)
-    mcg_dm.forward = types.MethodType(forward_musicgendecoder, mcg_dm)
-    mcg_model.forward = types.MethodType(forward_musicgenmodel, mcg_model)
+    mgc_dm.forward = types.MethodType(forward_musicgendecoder, mgc_dm)
+    mgc_model.forward = types.MethodType(forward_musicgenmodel, mgc_model)
+    mgc_instance.forward = types.MethodType(forward_mgc, mgc_instance)
 
 ### porting old code from mtmidi
 def get_print_name(dataset, model_size, is_csv = False, normalize = True, timestamp = 0):
