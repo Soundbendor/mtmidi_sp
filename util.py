@@ -21,6 +21,7 @@ model_sr = 32000
 # chords7 -> seventh_chords
 new_datasets = set(['polyrhythms', 'dynamics', 'seventh_chords', 'secondary_dominants', 'mode_mixture'])
 
+hf_datasets = set(['tempos', 'time_signatures', 'chords', 'notes', 'scales', 'intervals', 'simple_progressions'])
 chordprog_datasets = set(['secondary_dominant', 'modemix_chordprog'])
 
 models = ['musicgen-small', 'musicgen-medium', 'musicgen-large']

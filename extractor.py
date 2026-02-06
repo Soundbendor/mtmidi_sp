@@ -815,7 +815,6 @@ if __name__ == '__main__':
     parser.add_argument("-ub", "--use_64bit", type=strtobool, default=True, help="use 64-bit")
     parser.add_argument("-ds", "--dataset", type=str, default="polyrhythms", help="dataset")
     parser.add_argument("-ms", "--model_size", type=str, default="small", help="small, medium, or large")
-    parser.add_argument("-lp", "--layers_per", type=int, default=4, help="layers per loop if doing all layers (for jukebox)")
     parser.add_argument("-l", "--layer_num", type=int, default=-1, help="1-indexed layer num (all if < 0, for jukebox)")
     parser.add_argument("-n", "--normalize", type=strtobool, default=True, help="normalize audio")
     parser.add_argument("-m", "--memmap", type=strtobool, default=True, help="save as memmap, else save as npy")
