@@ -85,6 +85,7 @@ class BaseModelOutputWithPostActivations(ModelOutput):
 
 # define a new class based off Seq2SeqModelOutput
 # https://github.com/huggingface/transformers/blob/main/src/transformers/modeling_outputs.py#L238
+
 @dataclass
 class Seq2SeqLMOutputWithPostActivations(ModelOutput):
     """
@@ -643,7 +644,7 @@ def forward_mgcausal(
 # https://github.com/huggingface/transformers/blob/main/src/transformers/models/musicgen/modeling_musicgen.py#L1606C1-L1781C1
 # decoder is MusicgenforCausalLM
 # ===== MY CHANGE: changed return to include post_activations ====== 
-def forward_mgc(
+def forward_mgcond(
     self,
     input_ids: torch.LongTensor | None = None,
     attention_mask: torch.BoolTensor | None = None,
@@ -832,7 +833,7 @@ def override_mcg_forwards(mgc_instance):
     mgc_decoder.forward = types.MethodType(forward_mgcausal, mgc_decoder)
     mgc_dm.forward = types.MethodType(forward_musicgendecoder, mgc_dm)
     mgc_model.forward = types.MethodType(forward_musicgenmodel, mgc_model)
-    mgc_instance.forward = types.MethodType(forward_mgc, mgc_instance)
+    mgc_instance.forward = types.MethodType(forward_mgcond, mgc_instance)
 
 ### porting old code from mtmidi
 def get_print_name(dataset, model_size, is_csv = False, normalize = True, timestamp = 0):
