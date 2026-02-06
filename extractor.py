@@ -141,6 +141,7 @@ class Seq2SeqLMOutputWithPostActivations(ModelOutput):
     cross_attentions: tuple[torch.FloatTensor, ...] | None = None
     encoder_last_hidden_state: torch.FloatTensor | None = None
     encoder_hidden_states: tuple[torch.FloatTensor, ...] | None = None
+    encoder_attentions: tuple[torch.FloatTensor, ...] | None = None
     decoder_post_activations: tuple[torch.FloatTensor, ...] | None = None
 
 # new output for MusicgenforCausalLM
