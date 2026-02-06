@@ -828,7 +828,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
     use_64bit = args.use_64bit
     lnum = args.layer_num
-    lper = args.layers_per
     memmap = args.memmap
     normalize = args.normalize
     model_size = args.model_size
