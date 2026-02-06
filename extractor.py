@@ -88,7 +88,6 @@ class BaseModelOutputWithPostActivations(ModelOutput):
 
 @dataclass
 class Seq2SeqLMOutputWithPostActivations(ModelOutput):
-    class Seq2SeqLMOutput(ModelOutput):
     """
     Base class for sequence-to-sequence language models outputs.
 
