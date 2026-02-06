@@ -683,7 +683,7 @@ def path_handler(in_filepath, using_hf=False, model_sr = 44100, dur = 4., normal
     fbasename = None
     fold_num = -1 
     if using_hf == False:
-        print(f'loading {f}', file=logfile_handle)
+        print(f'loading {in_filepath}', file=logfile_handle)
         fbasename = UM.get_basename(in_filepath)
         fold_num = UM.get_fold_num_from_filepath(in_filepath)
         out_fname = f'{fbasename}.{out_ext}'
