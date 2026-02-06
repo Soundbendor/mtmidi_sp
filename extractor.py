@@ -746,7 +746,7 @@ def get_postacts(model_size, cur_dataset, normalize = True, dur = 4., use_64bit 
     text = ""
     wav_path = os.path.join(UM.by_projpath('wav'), cur_dataset)
     if len(from_dir) > 0:
-        wav_path = os.path.join(from_dir, 'wav', cur_dataset)
+        wav_path = os.path.join(from_dir, cur_dataset)
     cur_pathlist = None
     out_ext = 'dat'
     if memmap == False:
@@ -755,7 +755,7 @@ def get_postacts(model_size, cur_dataset, normalize = True, dur = 4., use_64bit 
         fold_num = -1 # don't care about fold folders
         cur_pathlist = UM.load_syntheory_train_dataset(cur_dataset)
     else:
-        cur_pathlist = UM.filepath_list(wav_path)
+        cur_pathlist = UM.filepath_list(wav_path, fold_num=fold_num, ignore_exts = set(['.csv']))
     
 
     device = 'cpu'

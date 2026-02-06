@@ -82,18 +82,18 @@ def get_model_postacts_path(model_size, dataset='polyrhythms', return_relative =
 
 # original just listed filenames,
 # now we need actual paths because folds
-def filepath_list(file_dir, fold_num=-1):
+def filepath_list(file_dir, fold_num=-1, ignore_exts = set(['.csv'])):
     files = []
     if fold_num < 0:
-        files = [os.path.join(file_dir, x) for x in os.listdir(file_dir)]
+        files = [os.path.join(file_dir, x) for x in os.listdir(file_dir) if os.path.splitext(x)[1] not in ignore_exts]
     elif fold_num == 0:
         for i in range(1,num_folds+1):
             fold_dir = os.path.join(file_dir, f'fold_{i}')
-            cur_files = [os.path.join(fold_dir, x) for x in os.listdir(fold_dir)]
+            cur_files = [os.path.join(fold_dir, x) for x in os.listdir(fold_dir) if os.path.splitext(x)[1] not in ignore_exts]
             files += cur_files
     else:
         fold_dir = os.path.join(file_dir, f'fold_{fold_num}')
-        files = [os.path.join(fold_dir, x) for x in os.listdir(fold_dir)]
+        files = [os.path.join(fold_dir, x) for x in os.listdir(fold_dir) if os.path.splitext(x)[1] not in ignore_exts]
     return files
 
 
