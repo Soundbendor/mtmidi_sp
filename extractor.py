@@ -83,21 +83,20 @@ class BaseModelOutputWithPostActivations(ModelOutput):
     post_activations: tuple[torch.FloatTensor, ...] | None = None
 
 
-# define a new class based off Seq2SeqModelOutput
-# https://github.com/huggingface/transformers/blob/main/src/transformers/modeling_outputs.py#L238
+# define a new class based off Seq2SeqLMOutput
+# https://github.com/huggingface/transformers/blob/main/src/transformers/modeling_outputs.py#L799
 
 @dataclass
 class Seq2SeqLMOutputWithPostActivations(ModelOutput):
+    class Seq2SeqLMOutput(ModelOutput):
     """
-    Base class for model encoder's outputs that also contains : pre-computed hidden states that can speed up sequential
-    decoding.
+    Base class for sequence-to-sequence language models outputs.
 
     Args:
-        last_hidden_state (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`):
-            Sequence of hidden-states at the output of the last layer of the decoder of the model.
-
-            If `past_key_values` is used only the last hidden-state of the sequences of shape `(batch_size, 1,
-            hidden_size)` is output.
+        loss (`torch.FloatTensor` of shape `(1,)`, *optional*, returned when `labels` is provided):
+            Language modeling loss.
+        logits (`torch.FloatTensor` of shape `(batch_size, sequence_length, config.vocab_size)`):
+            Prediction scores of the language modeling head (scores for each vocabulary token before SoftMax).
         past_key_values (`EncoderDecoderCache`, *optional*, returned when `use_cache=True` is passed or when `config.use_cache=True`):
             It is a [`~cache_utils.EncoderDecoderCache`] instance. For more details, see our [kv cache guide](https://huggingface.co/docs/transformers/en/kv_cache).
 
@@ -107,7 +106,7 @@ class Seq2SeqLMOutputWithPostActivations(ModelOutput):
             Tuple of `torch.FloatTensor` (one for the output of the embeddings, if the model has an embedding layer, +
             one for the output of each layer) of shape `(batch_size, sequence_length, hidden_size)`.
 
-            Hidden-states of the decoder at the output of each layer plus the optional initial embedding outputs.
+            Hidden-states of the decoder at the output of each layer plus the initial embedding outputs.
         decoder_attentions (`tuple(torch.FloatTensor)`, *optional*, returned when `output_attentions=True` is passed or when `config.output_attentions=True`):
             Tuple of `torch.FloatTensor` (one for each layer) of shape `(batch_size, num_heads, sequence_length,
             sequence_length)`.
@@ -126,7 +125,7 @@ class Seq2SeqLMOutputWithPostActivations(ModelOutput):
             Tuple of `torch.FloatTensor` (one for the output of the embeddings, if the model has an embedding layer, +
             one for the output of each layer) of shape `(batch_size, sequence_length, hidden_size)`.
 
-            Hidden-states of the encoder at the output of each layer plus the optional initial embedding outputs.
+            Hidden-states of the encoder at the output of each layer plus the initial embedding outputs.
         encoder_attentions (`tuple(torch.FloatTensor)`, *optional*, returned when `output_attentions=True` is passed or when `config.output_attentions=True`):
             Tuple of `torch.FloatTensor` (one for each layer) of shape `(batch_size, num_heads, sequence_length,
             sequence_length)`.
@@ -135,17 +134,18 @@ class Seq2SeqLMOutputWithPostActivations(ModelOutput):
             self-attention heads.
     """
 
-    last_hidden_state: torch.FloatTensor | None = None
+    loss: torch.FloatTensor | None = None
+    logits: torch.FloatTensor | None = None
     past_key_values: EncoderDecoderCache | None = None
     decoder_hidden_states: tuple[torch.FloatTensor, ...] | None = None
     decoder_attentions: tuple[torch.FloatTensor, ...] | None = None
     cross_attentions: tuple[torch.FloatTensor, ...] | None = None
     encoder_last_hidden_state: torch.FloatTensor | None = None
     encoder_hidden_states: tuple[torch.FloatTensor, ...] | None = None
-    encoder_attentions: tuple[torch.FloatTensor, ...] | None = None
     decoder_post_activations: tuple[torch.FloatTensor, ...] | None = None
 
 # new output for MusicgenforCausalLM
+# based off of CausalLMOutputWithCrossAttentions
 #https://github.com/huggingface/transformers/blob/393b4b3d28e29b4b05b19b4b7f3242a7fc893637/src/transformers/modeling_outputs.py#L693
 @dataclass
 class CausalLMOutputWithPostActivations(ModelOutput):
