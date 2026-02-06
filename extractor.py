@@ -776,7 +776,7 @@ def get_postacts(model_size, cur_dataset, normalize = True, dur = 4., use_64bit 
     existing_name_set = None
     if pickup == True:
         # pass -1 for fold_num to omit fold_num folder since remove_latest_file takes care of it
-        _file_dir = um.get_model_postacts_path(model_size, dataset=cur_dataset, return_relative = False, make_dir = False, other_projdir = to_dir, fold_num=-1)
+        _file_dir = UM.get_model_postacts_path(model_size, dataset=cur_dataset, return_relative = False, make_dir = False, other_projdir = to_dir, fold_num=-1)
         existing_files = UM.remove_latest_file(_file_dir, is_relative = False, fold_num = fold_num)
         existing_name_set = set([UM.get_basename(_f, with_ext = False) for _f in existing_files])
     for fidx,fpath in enumerate(cur_pathlist):
@@ -853,7 +853,7 @@ if __name__ == '__main__':
     rec_fpath = os.path.join(logdir, rec_fname)
     if debug == True:
         exit()
-    if (dataset in um.all_datasets) == False:
+    if (dataset in UM.all_datasets) == False:
         sys.exit('not a dataset')
     else:
         lf = open(log_fpath, 'a')
