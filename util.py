@@ -147,7 +147,7 @@ def ext_replace(old_path, new_ext = 'pt'):
 
 def get_postacts_shape(model_size):
     model_str = f'musicgen-{model_size}'
-    return (ffn_dim[model_str], model_num_layers[model_str])
+    return (model_num_layers[model_str], ffn_dim[model_str])
 
 
 # use_shape argument overrides shape getting (useful for baselines)
