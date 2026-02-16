@@ -3,8 +3,12 @@ import numpy as np
 import datasets as HFDS
 import librosa
 
-postacts_folder = 'postacts'
-num_folds = 20
+POSTACTS_FOLDER = 'postacts'
+NUM_FOLDS = 20
+EARLY_STOPPING_CHECK_INTERVAL = 1
+EARLY_STOPPING_BOREDOM = 10
+MEMMAP = True
+NUM_EPOCHS = 100
 
 # https://github.com/huggingface/transformers/blob/80996194bec45b16d4472a099e64b57e049bc6fd/src/transformers/models/musicgen/convert_musicgen_transformers.py#L120
 ffn_dim = {"musicgen-small": 1024 * 4, "musicgen-medium": 1536 * 4, "musicgen-large": 2048 * 4}
@@ -66,10 +70,10 @@ def get_hf_model_str(model_size):
 def get_model_postacts_path(model_size, dataset='polyrhythms', return_relative = False, make_dir = False, other_projdir = '', fold_num = -1):
     datapath = None
     if return_relative == False:
-        postactpath = by_projpath(postacts_folder,make_dir = make_dir, other_projdir = other_projdir)
+        postactpath = by_projpath(POSTACTS_FOLDER,make_dir = make_dir, other_projdir = other_projdir)
         datapath = os.path.join(postactpath, dataset)
     else:
-        datapath = postacts_folder
+        datapath = POSTACTS_FOLDER
     modelpath = os.path.join(datapath, f'musicgen-{model_size}')
     if fold_num > 0:
         modelpath = os.path.join(modelpath, f'fold_{fold_num}')
@@ -88,7 +92,7 @@ def filepath_list(file_dir, fold_num=-1, ignore_exts = set(['.csv'])):
     if fold_num < 0:
         files = [os.path.join(file_dir, x) for x in os.listdir(file_dir) if os.path.splitext(x)[-1] not in ignore_exts]
     elif fold_num == 0:
-        for i in range(1,num_folds+1):
+        for i in range(1,NUM_FOLDS+1):
             fold_dir = os.path.join(file_dir, f'fold_{i}')
             cur_files = [os.path.join(fold_dir, x) for x in os.listdir(fold_dir) if os.path.splitext(x)[-1] not in ignore_exts]
             files += cur_files

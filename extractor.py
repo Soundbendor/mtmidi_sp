@@ -1,6 +1,6 @@
 import sys,os,time,argparse,copy,types
 from torch import nn
-import util as UM
+import util.util_main as UM
 from dataclasses import dataclass
 import librosa as lr
 from librosa import feature as lrf
