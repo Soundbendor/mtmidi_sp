@@ -9,7 +9,10 @@ EARLY_STOPPING_CHECK_INTERVAL = 1
 EARLY_STOPPING_BOREDOM = 10
 MEMMAP = True
 NUM_EPOCHS = 100
-
+TRAIN_FOLDS = list(range(1,15))
+VALID_FOLDS = list(range(15,18))
+TEST_FOLDS = list(range(18,21))
+SEED = 39
 # https://github.com/huggingface/transformers/blob/80996194bec45b16d4472a099e64b57e049bc6fd/src/transformers/models/musicgen/convert_musicgen_transformers.py#L120
 ffn_dim = {"musicgen-small": 1024 * 4, "musicgen-medium": 1536 * 4, "musicgen-large": 2048 * 4}
 
