@@ -29,6 +29,7 @@ def load_data_dict(dataset):
     label_arr = None
     cur_df = get_df(dataset)
     num_examples = len(cur_df)
+    train_on_middle = False
     if dataset == 'polyrhythms':
         num_classes = PL.num_poly
         classdict = PL.polystr_to_idx
@@ -59,6 +60,7 @@ def load_data_dict(dataset):
         num_classes = float('inf') # regression
         classdict = {} # regression, no classes
         label_arr = [] # regression, no classes
+        train_on_middle = True
         label = 'bpm'
     elif dataset == 'time_signatures':
         num_classes = TSG.num_timesig

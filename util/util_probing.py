@@ -5,9 +5,9 @@ import polars as pl
 import torch, torch.utils.data as TUD
 from sklearn.model_selection import train_test_split
 
-def get_train_test_splits(datadict, train_pct = 0.7, test_subpct = 0.5, train_on_middle = False, seed = UM.SEED):
+def get_train_test_splits(datadict, train_pct = UM.TRAIN_PCT, test_subpct = UM.TEST_SUBPCT, seed = UM.SEED):
     ret = {}
-    if train_on_middle == True:
+    if datadict['train_on_middle'] == True:
         num_examples = datadict['num_examples']
         rng = np.random.default_rng(seed)
         _label = datadict['label']
@@ -49,12 +49,12 @@ def get_train_test_splits(datadict, train_pct = 0.7, test_subpct = 0.5, train_on
 
 
 
-def get_train_test_subsets(dataset_obj, datadict, train_folds = UM.TRAIN_FOLDS, valid_folds =UM.VALID_FOLDS, test_folds = UM.TEST_FOLDS, train_pct = 0.7, test_subpct = 0.5, test_on_middle = False, is_balanced = True, seed = UM.SEED):
+def get_train_test_subsets(dataset_obj, datadict, train_folds = UM.TRAIN_FOLDS, valid_folds =UM.VALID_FOLDS, test_folds = UM.TEST_FOLDS, train_pct = UM.TRAIN_PCT, test_subpct = UM.TEST_SUBPCT, seed = UM.SEED):
     idx_dict = {}
-    if train_on_middle == True or len(train_folds) == 0:
+    if datadict['train_on_middle'] == True or len(train_folds) == 0:
         # if train_folds is empty or training on middle, randomize with given pct/subpct splits
 
-        idx_dict = get_train_test_splits(datadict, train_pct = train_pct, test_subpct = test_subpct, train_on_middle = train_on_middle, seed = seed)
+        idx_dict = get_train_test_splits(datadict, train_pct = train_pct, test_subpct = test_subpct, seed = seed)
     else:
         # default to given folds
         num_examples = datadict['num_examples']
@@ -88,7 +88,13 @@ def get_train_test_subsets(dataset_obj, datadict, train_folds = UM.TRAIN_FOLDS, 
             'test_subset': test_subset,
             'train_idxs': idx_dict['train_idxs'],
             'valid_idxs': idx_dict['valid_idxs'],
-            'test_idxs': idx_dict['test_idxs']
+            'test_idxs': idx_dict['test_idxs'],
+            'train_size': train_size,
+            'valid_size': valid_size,
+            'test_size': test_size,
+            'train_folds': train_folds,
+            'valid_folds': valid_folds,
+            'test_folds': test_folds
             }
     return ret
 

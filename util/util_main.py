@@ -13,6 +13,8 @@ TRAIN_FOLDS = list(range(1,15))
 VALID_FOLDS = list(range(15,18))
 TEST_FOLDS = list(range(18,21))
 SEED = 39
+TRAIN_PCT = 0.7
+TEST_SUBPCT = 0.5
 # https://github.com/huggingface/transformers/blob/80996194bec45b16d4472a099e64b57e049bc6fd/src/transformers/models/musicgen/convert_musicgen_transformers.py#L120
 ffn_dim = {"musicgen-small": 1024 * 4, "musicgen-medium": 1536 * 4, "musicgen-large": 2048 * 4}
 
@@ -184,4 +186,12 @@ def save_npy(save_arr, fname, model_size, dataset='polyrhythms', make_dir = True
     fpath = os.path.join(modelpath, fname)
     np.save(fpath, save_arr, allow_pickle = True)
 
-
+def dict_arrayargs_to_str(cur_dict):
+    ret = {}
+    for (k,v) in cur_dict.items():
+        if isinstance(v, np.ndarray) or isinstance(v, list) or isinstance(v, tuple):
+            cur_str = ','.join([str(x) for x in v])
+            ret[k] = cur_str
+        else:
+            ret[k] = v
+    return ret
