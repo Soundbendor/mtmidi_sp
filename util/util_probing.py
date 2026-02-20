@@ -49,7 +49,6 @@ def get_train_test_splits(datadict, train_pct = 0.7, test_subpct = 0.5, train_on
 
 
 
-# to do: implement weights
 def get_train_test_subsets(dataset_obj, datadict, train_folds = UM.TRAIN_FOLDS, valid_folds =UM.VALID_FOLDS, test_folds = UM.TEST_FOLDS, train_pct = 0.7, test_subpct = 0.5, test_on_middle = False, is_balanced = True, seed = UM.SEED):
     idx_dict = {}
     if train_on_middle == True or len(train_folds) == 0:
@@ -67,7 +66,17 @@ def get_train_test_subsets(dataset_obj, datadict, train_folds = UM.TRAIN_FOLDS, 
     train_subset = TUD.Subset(dataset_obj, idx_dict['train_idxs'])
     valid_subset = None
     test_subset = None
-    weights = None # to implement, calculate from class prop in train subset
+    weights = np.array([])
+    train_size = idx_dict['train_idxs'].shape[0]
+    valid_size = idx_dict['valid_idxs'].shape[0]
+    test_size = idx_dict['test_idxs'].shape[0]
+    if datadict['is_balanced'] == False:
+        cur_label = datadict['label']
+        train_df = datadict['df'][idx_dict['train_idxs']]
+        class_amounts = {k:v[0] for (k,v) in train_df[cur_label].value_counts().rows_by_key(cur_label).items()}
+        amount_arr = np.array([class_amounts(k) for k in datadict['label_arr']])
+        inv_class_prop = train_size/amount_arr
+        weights = inv_class_prop/np.max(inv_class_prop)
     if idx_dict['valid_idxs'].shape[0] > 0:
         valid_subset = TUD.Subset(dataset_obj, idx_dict['valid_idxs'])
     if idx_dict['test_idxs'].shape[0] > 0:

@@ -3,3 +3,5 @@ polystr_to_idx = {'2a11': 0, '2a9': 1, '3a11': 2, '2a7': 3, '3a10': 4, '4a11': 5
 idx_to_polystr = {i:p for (p,i) in polystr_to_idx.items()}
 
 num_poly = len(polystr_to_idx)
+
+class_arr = [idx_to_polystr(i) for i in range(num_poly)]
