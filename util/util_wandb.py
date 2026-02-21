@@ -41,16 +41,3 @@ def build_kwargs(_config):
     _d['config'] = _config
     return _d
 
-def create_study_name(parser_args):
-    return f'{parser_args.expr_type}-{parser_args.dataset}_{parser_args.model_size}'
-
-
-def create_or_load_study(parser_args, maximize=True):
-    cur_study_name = create_study_name(parser_args)
-    sampler_dir = UM.by_projpath(UM.SAMPLER_FOLDER, True)
-    db_dir = UM.by_projpath(UM.DB_FOLDER, True)
-    sampler_filepath = os.path.join(sampler_dir, f'{cur_study_name}.pkl')
-    db_filepath = os.path.join(db_dir, f'{cur_study_name}.db')
-
-
-
