@@ -1,9 +1,13 @@
 import os
+from pathlib import Path
 import numpy as np
 import datasets as HFDS
 import librosa
 
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 POSTACTS_FOLDER = 'postacts'
+SAMPLER_FOLDER = 'samplers'
+DB_FOLDER = 'db'
 NUM_FOLDS = 20
 EARLY_STOPPING_CHECK_INTERVAL = 1
 EARLY_STOPPING_BOREDOM = 10
@@ -53,7 +57,7 @@ def load_wav(fpath, dur = 4., normalize = False, sr=32000):
         return librosa.util.normalize(snd)
 
 def by_projpath(subpath=None,make_dir = False, other_projdir = ''):
-    cur_path = os.path.dirname(os.path.realpath(__file__))
+    cur_path = PROJECT_ROOT
     if len(other_projdir) > 0:
         cur_path = other_projdir
     if subpath != None:
