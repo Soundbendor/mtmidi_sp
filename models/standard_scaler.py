@@ -135,4 +135,13 @@ class StandardScaler(nn.Module):
         self.partial_fit(X)
         return self.transform(X)
 
+    # adding: getters for monitoring
+    def get_mean():
+        return self.mean.data.detach()
+
+    def get_var():
+        return self.var.data.detach()
+
+    def get_scale():
+        return self.scale.data.detach()
 

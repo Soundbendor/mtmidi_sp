@@ -13,7 +13,7 @@ def get_layer_search_space(model_size):
     return ret
 
 def create_study_name(parser_args):
-    return f'{parser_args.expr_type}-{parser_args.dataset}_{parser_args.model_size}'
+    return f'{parser_args.expr_type}-{parser_args.dataset}_{parser_args.model_size}-{parser_args.suffix}'
 
 
 def create_or_load_study(parser_args, seed=UM.seed):

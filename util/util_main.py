@@ -14,13 +14,39 @@ EARLY_STOPPING_CHECK_INTERVAL = 1
 EARLY_STOPPING_BOREDOM = 10
 MEMMAP = True
 NUM_EPOCHS = 100
+BATCH_SIZE = 64
+DATALOADER_SHUFFLE = True
 TRAIN_FOLDS = list(range(1,15))
 VALID_FOLDS = list(range(15,18))
 TEST_FOLDS = list(range(18,21))
+IS_64BIT = False
 SEED = 39
 TRAIN_PCT = 0.7
 TEST_SUBPCT = 0.5
 OPT_DIRECTION = 'maximize'
+STANDARD_SCALER_CONSTANT_FEATURE_MASK = True
+
+
+SHARE_PATH = os.path.join(os.sep, 'nfs','hpc', 'share', 'kwand') 
+WANDB_PATH = os.path.join(os.sep, 'nfs','guille', 'eecs_research', 'soundbendor', 'kwand', 'wandb') 
+
+MUSICGEN_SIZES = ["small", "medium", "large"]
+
+DATASET_SHORT = {"polyrhythms": "pl",
+                 "dynamics": "dyn",
+                 "seventh_chords": "ch7",
+                 "mode_mixture": "mm",
+                 "secondary_dominants": "sd",
+                 "tempos": "tpo",
+                 "time_signatures": "ts",
+                 "chords": "chd"
+                 "notes": "not",
+                 "scales": "scl",
+                 "intervals": "ivl",
+                 "simple_progressions": "spg"
+                 }
+
+MODEL_SIZE_SHORT = {"small": "sm", "medium": "med", "large": "lg"}
 # https://github.com/huggingface/transformers/blob/80996194bec45b16d4472a099e64b57e049bc6fd/src/transformers/models/musicgen/convert_musicgen_transformers.py#L120
 ffn_dim = {"musicgen-small": 1024 * 4, "musicgen-medium": 1536 * 4, "musicgen-large": 2048 * 4}
 
@@ -28,7 +54,6 @@ ffn_dim = {"musicgen-small": 1024 * 4, "musicgen-medium": 1536 * 4, "musicgen-la
 model_num_layers = {"musicgen-small": 24, "musicgen-medium": 48, "musicgen-large": 48}
 
 ### porting a lot of old code from mtmidi
-share_path = os.path.join(os.sep, 'nfs','hpc', 'share', 'kwand') 
 
 model_sr = 32000
 # same as mtmidi
@@ -161,7 +186,9 @@ def ext_replace(old_path, new_ext = 'pt'):
     return outname
 
 def get_postacts_shape(model_size):
-    model_str = f'musicgen-{model_size}'
+    model_str = ""
+    if model_size in MUSICGEN_SIZES:
+        model_str = f'musicgen-{model_size}'
     return (model_num_layers[model_str], ffn_dim[model_str])
 
 

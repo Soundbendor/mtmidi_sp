@@ -1012,9 +1012,9 @@ if __name__ == '__main__':
 
     from_dir = ""
     if args.from_share == True:
-        from_dir = os.path.join(UM.share_path, 'syntheory_plus')
+        from_dir = os.path.join(UM.SHARE_PATH, 'syntheory_plus')
     if args.to_share == True:
-        to_dir = os.path.join(UM.share_path, 'mtmidi_sp')
+        to_dir = os.path.join(UM.SHARE_PATH, 'mtmidi_sp')
     # miscellaneous logs
     log_fname = get_print_name(dataset, model_size, is_csv = False, normalize = normalize, timestamp = timestamp)
     rec_fname = get_print_name(dataset, model_size, is_csv = True, normalize = normalize, timestamp = timestamp)

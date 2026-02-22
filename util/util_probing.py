@@ -98,7 +98,26 @@ def get_train_test_subsets(dataset_obj, datadict, train_folds = UM.TRAIN_FOLDS, 
             }
     return ret
 
+def get_run_name(parser_args, layer_idx, is_short = False):
+    _dataset = parser_args.dataset
+    _model_size = parser_args.model_size
+    if is_short == True:
+        _dataset = UM.DATASET_SHORT[_dataset]
+        _model_size = UM.MODEL_SIZE_SHORT[_model_size]
+    return f'{_dataset}_{_model_size}_{layer_idx}-{parser_args.prefix}'
 
-    
-    
+def accumulate_vecs(cur_vecs, vec_to_add):
+    if cur_vecs = None:
+        return vec_to_add
+    else:
+        return torch.vstack((cur_vecs, vec_to_add))
 
+def save_scaler(scaler, run_name, is_64bit = UM.IS_64BIT):
+    cur_ext = ""
+    if is_64bit == True:
+        cur_ext = '64.scaler_dict'
+    else:
+        cur_ext = '32.scaler_dict'
+    scaler_path = UM.by_projpath(UM.SCALERS_FOLDER)
+    out_path = os.path.join(scaler_path, f'{run_name}-{cur_ext}')
+    torch.save(scaler.state_dict(), out_path)
