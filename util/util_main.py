@@ -7,6 +7,7 @@ import librosa
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 POSTACTS_FOLDER = 'postacts'
 SAMPLER_FOLDER = 'samplers'
+SCALERS_FOLDER = 'scalers'
 RDB_FOLDER = 'rdb'
 NUM_FOLDS = 20
 EARLY_STOPPING_CHECK_INTERVAL = 1

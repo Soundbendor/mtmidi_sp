@@ -14,7 +14,6 @@ import util_main as UM
 # https://docs.wandb.ai/models/ref/python/functions/login
 
 entity='soundbendor'
-project='mtmidi_sp-full_linearnn'
 
 def login():
     _key = ''
@@ -26,8 +25,9 @@ def login():
 def build_config(parser_args, datadict, subsetdict):
     _config = {k:v for (k,v) in vars(parser_args).items()}
     _config['num_epochs'] = UM.NUM_EPOCHS
-    _config['early_stopping_check_interval'] = UM.EARLY_STOPPING_CHECK_INTERVAL
-    _config['early_stopping_boredom'] = UM.EARLY_STOPPING_BOREDOM
+    if parser_args.expr_type != 'standard_scaler':
+        _config['early_stopping_check_interval'] = UM.EARLY_STOPPING_CHECK_INTERVAL
+        _config['early_stopping_boredom'] = UM.EARLY_STOPPING_BOREDOM
     _config['train_folds'] = subsetdict['train_folds']
     _config['valid_folds'] = subsetdict['valid_folds']
     _config['test_folds'] = subsetdict['test_folds']
@@ -36,8 +36,8 @@ def build_config(parser_args, datadict, subsetdict):
     return _config
 
 
-def build_kwargs(_config):
-    _d = {'entity': entity, 'project': project}
+def build_kwargs(_config, expr_type):
+    _d = {'entity': entity, 'project': f'mtmidi_sp-{expr_type}'}
     _d['config'] = _config
     return _d
 
