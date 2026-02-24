@@ -106,13 +106,23 @@ def get_run_name(parser_args, layer_idx, is_short = False):
         _model_size = UM.MODEL_SIZE_SHORT[_model_size]
     return f'{_dataset}_{_model_size}_{layer_idx}-{parser_args.prefix}'
 
+# input torch, output torch
 def accumulate_vecs(cur_vecs, vec_to_add):
     if cur_vecs = None:
         return vec_to_add
     else:
         return torch.vstack((cur_vecs, vec_to_add))
 
-def save_scaler(scaler, run_name, is_64bit = UM.IS_64BIT):
+# input torch, output numpy
+# predictions are probability dists, convert to index
+def accumulate_truths_preds(truths, truths_to_add, preds, preds_to_add):
+    new_truths = truths_to_add.detach().cpu().numpy().flatten()
+    new_preds = torch.argmax(preds_to_add,axis=1).detach().cpu().numpy().flatten()
+
+
+    
+
+def save_scaler_dict(scaler, run_name, is_64bit = UM.IS_64BIT):
     cur_ext = ""
     if is_64bit == True:
         cur_ext = '64.scaler_dict'
@@ -121,3 +131,13 @@ def save_scaler(scaler, run_name, is_64bit = UM.IS_64BIT):
     scaler_path = UM.by_projpath(UM.SCALERS_FOLDER)
     out_path = os.path.join(scaler_path, f'{run_name}-{cur_ext}')
     torch.save(scaler.state_dict(), out_path)
+
+def load_scaler_dict(scaler, run_name, is_64bit = UM.IS_64BIT, device='cpu'):
+    cur_ext = ""
+    if is_64bit == True:
+        cur_ext = '64.scaler_dict'
+    else:
+        cur_ext = '32.scaler_dict'
+    scaler_path = UM.by_projpath(UM.SCALERS_FOLDER)
+    in_path = os.path.join(scaler_path, f'{run_name}-{cur_ext}')
+    scaler.load_state_dict(torch.load(out_path, map_location=device, weights_only = False))

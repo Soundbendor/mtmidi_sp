@@ -33,17 +33,113 @@ def train_standard_scaler(datadict, subsetdict, configdict, layer_idx = 0, devic
             ipt, ground_truth = data
             scaler.partial_fit(ipt)
         if log_data == True:
-            mean_vecs = UP.accumulate_vecs(mean_vecs, scaler.get_mean())
-            var_vecs = UP.accumulate_vecs(var_vecs, scaler.get_var())
+            mean_vecs = UP.accumulate_torch_vecs(mean_vecs, scaler.get_mean())
+            var_vecs = UP.accumulate_torch_vecs(var_vecs, scaler.get_var())
     
     ret['scaler'] = scaler
     ret['mean_vecs'] = mean_vecs
     ret['var_vecs'] = var_vecs
     return ret
 
+
+def train_probe(model, scaler, generator, opt_fn, loss_fn, train_subset, batch_size=64, shuffle = True, is_classification = True, device='cpu'):
+    train_dl = TUD.DataLoader(train_subset, batch_size = batch_size, shuffle=shuffle, generator=generator)
+    
+    total_loss = 0.
+    iters = 0
+    for batch_idx, data in enumerate(train_dl):
+        
+        _ipt, ground_truth = data
+        ipt = scaler.transform(_ipt)
+        pred = model(ipt)
+
+        loss = None
+        if is_classification == True:
+            loss = loss_fn(pred, ground_truth)
+        else:
+            loss = loss_fn(pred.flatten(), ground_truth.flatten())
+        
+        loss.backward()
+        opt_fn.step()
+        cur_loss = loss.item()
+        total_loss += cur_loss
+    avg_loss = total_loss/float(iters)
+    return avg_loss
+
+def valid_test_probe(model, scaler, generator, loss_fn, valid_subset, batch_size=64, shuffle = True, is_classification = True, device='cpu'):
+    valid_dl = TUD.DataLoader(train-subset, batch_size = batch_size, shuffle=shuffle, generator=generator)
+    
+    total_loss = 0.
+    iters = 0
+
+    # accumulate ground truths and predictions
+    truths = None
+    preds = None
+
+    for batch_idx, data in enumerate(valid_dl):
+        
+        _ipt, ground_truth = data
+        ipt = scaler.transform(_ipt)
+        pred = model(ipt)
+       
+        # don't need loss for testing
+        if loss_fn != None:
+            loss = None
+            if is_classification == True:
+                loss = loss_fn(pred, ground_truth)
+            else:
+                loss = loss_fn(pred.flatten(), ground_truth.flatten())
             
-def _objective(study, parser_args, datadict, subsetdict, configdict):
-    pass
+            cur_loss = loss.item()
+            total_loss += cur_loss
+
+        truths, preds = UP.
+
+def _objective(trial, parser_args, datadict, subsetdict, configdict, device='cpu'):
+    dropout = trial.suggest_float('dropout', 0.25, 0.75, step=0.25)
+    layer_idx = trial.suggest_categorical('layer_idx', list(range(configdict['model_num_layers'])))
+
+
+    run_name = UP.get_run_name(parser_args, layer_idx, is_short = False)
+    trial_number = trial.number
+    
+    subsetdict['train_subset'].dataset.set_layer_idx(layer_idx)
+    subsetdict['valid_subset'].dataset.set_layer_idx(layer_idx)
+     
+    # load pre-trained scaler
+    scaler = StandardScaler(with_mean = True, with_std = True, use_64bit = configdict['is_64bit'], dim=configdict['model_dim'], use_constant_feature_mask = configdict['standard_scaler_constant_feature_mask'], device = device)
+    UP.load_scaler_dict(scaler, run_name, is_64bit = configdict['is_64bit'], device=device)
+    scaler.eval()
+
+    # init model
+    model = LinearNNProbe(in_dim =configdict['model_dim'], out_dim = datadict['num_classes'], dropout = dropout , initial_dropout = configdict['linearnnprobe_initial_dropout'])
+
+    # init rng
+    torch_gen = torch.Generator(device=device)
+    # init opt/loss
+    opt_fn = torch.optim.Adam(model.parameters(), lr=configdict['learning_rate'])
+    loss_fn = None
+    if datadict['is_classification'] == True:
+        if datadict['is_balanced'] == True:
+            loss_fn = nn.CrossEntropyLoss(reduction='mean')
+        else:
+            loss_fn = nn.CrossEntropyLoss(reduction='mean', weight = torch.from_numpy(subsetdict['weights']).to(device=device, dtype=(torch.float32 if configdict['is_64bit'] == False else torch.float64)))
+    else:
+        loss_fn = nn.MSELoss(reduction='mean')
+
+    # other init
+    using_early_stopping =  configdict['early_stopping_check_interval'] > 0
+    boredom = 0
+        
+    best_probe_dict = None
+    best_scaler_dict = None
+
+    for epoch_idx in range(configdict['num_epochs']):
+        train_avg_loss = train_probe(model, scaler, torch_gen, opt_fn, loss_fn, subsetdict['train_subset'], batch_size=configdict['batch_size'], shuffle = configdict['dataloader_shuffle'], is_classification = datadict['is_classification'], device=device)
+
+
+    #config['early_stopping_boredom']
+
 
             
 
@@ -96,7 +192,7 @@ if __name__ == "__main__":
             wandb_dict['name'] = short_name
             cur_run = UW.init(wandb_dict)
             scaler_dict = train_standard_scaler(datadict, subsetdict, configdict, layer_idx = layer_idx, device = device, expr_suffix = args.suffix, log_data=True)
-            UP.save_scaler(scaler_dict['scaler'], run_name, is_64bit = configdict['is_64bit'])
+            UP.save_scaler_dict(scaler_dict['scaler'], run_name, is_64bit = configdict['is_64bit'])
             UW.log_scaler_mean_var(cur_run, scaler_dict)
             UW.finish_run(cur_run)
 

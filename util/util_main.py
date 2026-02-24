@@ -27,6 +27,7 @@ TRAIN_PCT = 0.7
 TEST_SUBPCT = 0.5
 OPT_DIRECTION = 'maximize'
 STANDARD_SCALER_CONSTANT_FEATURE_MASK = True
+LINEARNNPROBE_INITIAL_DROPOUT = True
 
 
 SHARE_PATH = os.path.join(os.sep, 'nfs','hpc', 'share', 'kwand') 

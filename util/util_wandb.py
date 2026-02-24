@@ -44,10 +44,12 @@ def build_config(parser_args, datadict, subsetdict):
     _config['model_dim'] = model_shape[1]
     _config['model_num_layers'] = model_shape[0]
     _config['dataloader_shuffle'] = UM.DATALOADER_SHUFFLE
-    _config['standard_scaler_constant_feature_mask'] = UM.STANDARD_SCALER_CONSTANT_FEATURE_MASK
     if parser_args.expr_type != 'standard_scaler':
         _config['early_stopping_check_interval'] = UM.EARLY_STOPPING_CHECK_INTERVAL
         _config['early_stopping_boredom'] = UM.EARLY_STOPPING_BOREDOM
+        _config['linearnnprobe_initial_dropout'] =  UM.LINEARNNPROBE_INITIAL_DROPOUT
+    else:
+        _config['standard_scaler_constant_feature_mask'] = UM.STANDARD_SCALER_CONSTANT_FEATURE_MASK
     _config['train_folds'] = subsetdict['train_folds']
     _config['valid_folds'] = subsetdict['valid_folds']
     _config['test_folds'] = subsetdict['test_folds']
