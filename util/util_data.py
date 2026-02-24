@@ -1,6 +1,6 @@
 import torch
 
-import util_main as UM
+import util_main as UMN
 import ..data_helpers.polyrhythms as PL
 import ..data_helpers.dynamics as DYN
 import ..data_helpers.seventh_chords as CH7
@@ -16,7 +16,7 @@ import ..data_helpers.simple_progressions as SPG
 
 def get_df(dataset):
     fname = f'{dataset}-metadata.csv'
-    csvpath = os.path.join(UM.by_projpath('csv', make_dir = False), fname)
+    csvpath = os.path.join(UMN.by_projpath('csv', make_dir = False), fname)
     cur_data = pl.read_csv(csvpath)
     return cur_data
 
@@ -109,7 +109,7 @@ def load_data_dict(dataset):
 
 def get_memmap_at_idx(fname_base, fold_num, model_size, dataset, layer_idx, use_64bit=False, to_torch = True, other_projdir = '', device='cpu'):
     fname = f'{fname_base}.dat'
-    emb_file = UM.get_postacts_file(model_size, dataset=dataset, fname=fname, write = False, use_64bit = use_64bit, use_shape = None, other_projdir = other_projdir, fold_num = fold_num)
+    emb_file = UMN.get_postacts_file(model_size, dataset=dataset, fname=fname, write = False, use_64bit = use_64bit, use_shape = None, other_projdir = other_projdir, fold_num = fold_num)
     cur = emb_file[layer_idx,:].copy()
     if to_torch == True:
         cur = torch.from_numpy(cur).to(device)

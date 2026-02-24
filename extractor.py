@@ -1,6 +1,6 @@
 import sys,os,time,argparse,copy,types
 from torch import nn
-import util.util_main as UM
+import util.util_main as UMN
 from dataclasses import dataclass
 import librosa as lr
 from librosa import feature as lrf
@@ -855,20 +855,20 @@ def path_handler(in_filepath, using_hf=False, model_sr = 44100, dur = 4., normal
     fold_num = -1 
     if using_hf == False:
         print(f'loading {in_filepath}', file=logfile_handle)
-        fbasename = UM.get_basename(in_filepath)
-        fold_num = UM.get_fold_num_from_filepath(in_filepath)
+        fbasename = UMN.get_basename(in_filepath)
+        fold_num = UMN.get_fold_num_from_filepath(in_filepath)
         out_fname = f'{fbasename}.{out_ext}'
         # don't need to load audio if jukebox
-        audio = UM.load_wav(in_filepath, dur = dur, normalize = normalize, sr = model_sr)
+        audio = UMN.load_wav(in_filepath, dur = dur, normalize = normalize, sr = model_sr)
     else:
         hf_path = f['audio']['path']
         print(f"loading {hf_path}", file=lf)
-        out_fname = UM.ext_replace(hf_path, new_ext=out_ext)
-        fbasename = UM.ext_replace(hf_path, new_ext='')
+        out_fname = UMN.ext_replace(hf_path, new_ext=out_ext)
+        fbasename = UMN.ext_replace(hf_path, new_ext='')
     aud_sr = None
     if using_hf == True:
-        fbasename = UM.get_basename(in_filepath)
-        audio, aud_sr = UM.get_from_entry_syntheory_audio(fbasename, mono=True, normalize =normalize, dur = dur)
+        fbasename = UMN.get_basename(in_filepath)
+        audio, aud_sr = UMN.get_from_entry_syntheory_audio(fbasename, mono=True, normalize =normalize, dur = dur)
         if aud_sr != model_sr:
             audio = lr.resample(audio, orig_sr=aud_sr, target_sr=model_sr)
     return {'in_fpath': in_filepath, 'out_fname': out_fname, 'audio': audio, 'fname': fbasename, 'fold_num': fold_num}
@@ -907,14 +907,14 @@ def get_musicgen_lm_postacts(model, proc, audio, text="", meanpool = True, model
 
 def get_postacts(model_size, cur_dataset, normalize = True, dur = 4., use_64bit = True, logfile_handle=None, recfile_handle = None, memmap = True, pickup = False, fold_num = -1, from_dir = "", to_dir = ""):
     
-    using_hf = cur_dataset in UM.hf_datasets
+    using_hf = cur_dataset in UMN.hf_datasets
     # musicgen stuff
     device = 'cpu'
     num_layers = None
     proc = None
     model = None
     text = ""
-    wav_path = os.path.join(UM.by_projpath('wav'), cur_dataset)
+    wav_path = os.path.join(UMN.by_projpath('wav'), cur_dataset)
     if len(from_dir) > 0:
         wav_path = os.path.join(from_dir, cur_dataset)
     cur_pathlist = None
@@ -923,9 +923,9 @@ def get_postacts(model_size, cur_dataset, normalize = True, dur = 4., use_64bit 
         out_ext = 'npy'
     if using_hf == True:
         fold_num = -1 # don't care about fold folders
-        cur_pathlist = UM.load_syntheory_train_dataset(cur_dataset)
+        cur_pathlist = UMN.load_syntheory_train_dataset(cur_dataset)
     else:
-        cur_pathlist = UM.filepath_list(wav_path, fold_num=fold_num, ignore_exts = set(['.csv']))
+        cur_pathlist = UMN.filepath_list(wav_path, fold_num=fold_num, ignore_exts = set(['.csv']))
 
     device = 'cpu'
     if torch.cuda.is_available() == True:
@@ -933,7 +933,7 @@ def get_postacts(model_size, cur_dataset, normalize = True, dur = 4., use_64bit 
         torch.cuda.empty_cache()
         torch.set_default_device(device)
     
-    model_str = UM.get_hf_model_str(model_size) 
+    model_str = UMN.get_hf_model_str(model_size) 
     proc = AutoProcessor.from_pretrained(model_str)
     model = MusicgenForConditionalGeneration.from_pretrained(model_str, device_map=device)
     model_sr = model.config.audio_encoder.sampling_rate
@@ -944,12 +944,12 @@ def get_postacts(model_size, cur_dataset, normalize = True, dur = 4., use_64bit 
     existing_name_set = None
     if pickup == True:
         # pass -1 for fold_num to omit fold_num folder since remove_latest_file takes care of it
-        _file_dir = UM.get_model_postacts_path(model_size, dataset=cur_dataset, return_relative = False, make_dir = False, other_projdir = to_dir, fold_num=-1)
-        existing_files = UM.remove_latest_file(_file_dir, is_relative = False, fold_num = fold_num)
-        existing_name_set = set([UM.get_basename(_f, with_ext = False) for _f in existing_files])
+        _file_dir = UMN.get_model_postacts_path(model_size, dataset=cur_dataset, return_relative = False, make_dir = False, other_projdir = to_dir, fold_num=-1)
+        existing_files = UMN.remove_latest_file(_file_dir, is_relative = False, fold_num = fold_num)
+        existing_name_set = set([UMN.get_basename(_f, with_ext = False) for _f in existing_files])
     for fidx,fpath in enumerate(cur_pathlist):
         if pickup == True:
-            cur_name = UM.get_basename(fpath, with_ext = False)
+            cur_name = UMN.get_basename(fpath, with_ext = False)
             if cur_name in existing_name_set:
                 continue
         fdict = path_handler(fpath, model_sr = model_sr, normalize = normalize, dur = dur,using_hf = using_hf, logfile_handle=logfile_handle, out_ext = out_ext)
@@ -961,16 +961,16 @@ def get_postacts(model_size, cur_dataset, normalize = True, dur = 4., use_64bit 
         # store by model_size (and fold_num if not using_hf)
         emb_file = None
         np_arr = None
-        f = UM.get_basename(in_fpath) 
+        f = UMN.get_basename(in_fpath) 
         if memmap == True:
-            emb_file = UM.get_postacts_file(model_size, dataset=cur_dataset, fname=out_fname, use_64bit = use_64bit, write=True, use_shape = None, other_projdir = to_dir, fold_num = fold_num)
+            emb_file = UMN.get_postacts_file(model_size, dataset=cur_dataset, fname=out_fname, use_64bit = use_64bit, write=True, use_shape = None, other_projdir = to_dir, fold_num = fold_num)
         print(f'--- extracting musicgen_lm for {fpath} ---', file=logfile_handle)
         rep_arr =  get_musicgen_lm_postacts(model, proc, audio_ipt, text="", meanpool = True, model_sr = model_sr, device=device)
         if memmap == True:
             emb_file[:,:] = rep_arr
             emb_file.flush()
         else:
-            UM.save_npy(rep_arr, out_fname, model_size, dataset=cur_dataset, other_projdir = to_dir)
+            UMN.save_npy(rep_arr, out_fname, model_size, dataset=cur_dataset, other_projdir = to_dir)
         fname = fdict['fname']
         print(f'{fname},1', file=recfile_handle)
 
@@ -1007,14 +1007,14 @@ if __name__ == '__main__':
     from_share = args.from_share
     fold_num = args.fold_num
     # exit if not a "real" dataset
-    logdir = UM.by_projpath(subpath='log', make_dir = True)
+    logdir = UMN.by_projpath(subpath='log', make_dir = True)
     timestamp = int(time.time() * 1000)
 
     from_dir = ""
     if args.from_share == True:
-        from_dir = os.path.join(UM.SHARE_PATH, 'syntheory_plus')
+        from_dir = os.path.join(UMN.SHARE_PATH, 'syntheory_plus')
     if args.to_share == True:
-        to_dir = os.path.join(UM.SHARE_PATH, 'mtmidi_sp')
+        to_dir = os.path.join(UMN.SHARE_PATH, 'mtmidi_sp')
     # miscellaneous logs
     log_fname = get_print_name(dataset, model_size, is_csv = False, normalize = normalize, timestamp = timestamp)
     rec_fname = get_print_name(dataset, model_size, is_csv = True, normalize = normalize, timestamp = timestamp)
@@ -1022,7 +1022,7 @@ if __name__ == '__main__':
     rec_fpath = os.path.join(logdir, rec_fname)
     if debug == True:
         exit()
-    if (dataset in UM.all_datasets) == False:
+    if (dataset in UMN.all_datasets) == False:
         sys.exit('not a dataset')
     else:
         lf = open(log_fpath, 'a')

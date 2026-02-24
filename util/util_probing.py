@@ -1,11 +1,13 @@
-import util_mail as UM
+import copy
+
+import util_main as UMN
 
 import numpy as np
 import polars as pl
 import torch, torch.utils.data as TUD
 from sklearn.model_selection import train_test_split
 
-def get_train_test_splits(datadict, train_pct = UM.TRAIN_PCT, test_subpct = UM.TEST_SUBPCT, seed = UM.SEED):
+def get_train_test_splits(datadict, train_pct = UMN.TRAIN_PCT, test_subpct = UMN.TEST_SUBPCT, seed = UMN.SEED):
     ret = {}
     if datadict['train_on_middle'] == True:
         num_examples = datadict['num_examples']
@@ -49,7 +51,7 @@ def get_train_test_splits(datadict, train_pct = UM.TRAIN_PCT, test_subpct = UM.T
 
 
 
-def get_train_test_subsets(dataset_obj, datadict, train_folds = UM.TRAIN_FOLDS, valid_folds =UM.VALID_FOLDS, test_folds = UM.TEST_FOLDS, train_pct = UM.TRAIN_PCT, test_subpct = UM.TEST_SUBPCT, seed = UM.SEED):
+def get_train_test_subsets(dataset_obj, datadict, train_folds = UMN.TRAIN_FOLDS, valid_folds =UMN.VALID_FOLDS, test_folds = UMN.TEST_FOLDS, train_pct = UMN.TRAIN_PCT, test_subpct = UMN.TEST_SUBPCT, seed = UMN.SEED):
     idx_dict = {}
     if datadict['train_on_middle'] == True or len(train_folds) == 0:
         # if train_folds is empty or training on middle, randomize with given pct/subpct splits
@@ -102,8 +104,8 @@ def get_run_name(parser_args, layer_idx, is_short = False):
     _dataset = parser_args.dataset
     _model_size = parser_args.model_size
     if is_short == True:
-        _dataset = UM.DATASET_SHORT[_dataset]
-        _model_size = UM.MODEL_SIZE_SHORT[_model_size]
+        _dataset = UMN.DATASET_SHORT[_dataset]
+        _model_size = UMN.MODEL_SIZE_SHORT[_model_size]
     return f'{_dataset}_{_model_size}_{layer_idx}-{parser_args.prefix}'
 
 # input torch, output torch
@@ -115,29 +117,43 @@ def accumulate_vecs(cur_vecs, vec_to_add):
 
 # input torch, output numpy
 # predictions are probability dists, convert to index
-def accumulate_truths_preds(truths, truths_to_add, preds, preds_to_add):
+def accumulate_truths_preds(truths, truths_to_add, preds, preds_to_add, batch_idx, is_classification = False):
     new_truths = truths_to_add.detach().cpu().numpy().flatten()
-    new_preds = torch.argmax(preds_to_add,axis=1).detach().cpu().numpy().flatten()
+    new_preds = None
+    if is_classification == True:
+        new_preds = torch.argmax(preds_to_add,axis=1).detach().cpu().numpy().flatten()
+    else:
+        # regression doesn't need argmax
+        new_preds = preds_to_add.detach().cpu().numpy().flatten()
 
+    # first time through, just return new truths and preds
+    if batch_idx == 0:
+        return new_truths, new_preds
+    else:
+        # The base of an array that owns its memory is None
+        # (and want to own own memory, so deep copy if not)
+        # (doesn't work if truths is None, first time around)
+        if truths.base is None and preds.base is None:
+            return np.hstack((truths,new_truths)), np.hstack((preds, new_preds))
+        else:
+            return np.hstack((copy.deepcopy(truths),new_truths)), np.hstack((copy.deepcopy(preds), new_preds))
 
-    
-
-def save_scaler_dict(scaler, run_name, is_64bit = UM.IS_64BIT):
+def save_scaler_dict(scaler, run_name, is_64bit = UMN.IS_64BIT):
     cur_ext = ""
     if is_64bit == True:
         cur_ext = '64.scaler_dict'
     else:
         cur_ext = '32.scaler_dict'
-    scaler_path = UM.by_projpath(UM.SCALERS_FOLDER)
+    scaler_path = UMN.by_projpath(UMN.SCALERS_FOLDER)
     out_path = os.path.join(scaler_path, f'{run_name}-{cur_ext}')
     torch.save(scaler.state_dict(), out_path)
 
-def load_scaler_dict(scaler, run_name, is_64bit = UM.IS_64BIT, device='cpu'):
+def load_scaler_dict(scaler, run_name, is_64bit = UMN.IS_64BIT, device='cpu'):
     cur_ext = ""
     if is_64bit == True:
         cur_ext = '64.scaler_dict'
     else:
         cur_ext = '32.scaler_dict'
-    scaler_path = UM.by_projpath(UM.SCALERS_FOLDER)
+    scaler_path = UMN.by_projpath(UMN.SCALERS_FOLDER)
     in_path = os.path.join(scaler_path, f'{run_name}-{cur_ext}')
     scaler.load_state_dict(torch.load(out_path, map_location=device, weights_only = False))

@@ -1,14 +1,14 @@
 import os, pickle
 import optuna
 
-import util_main as UM
+import util_main as UMN
 
 linearnn_full-search_space = {'dropout': [0.25, 0.5, 0.75]}
 
 def get_layer_search_space(model_size):
     ret = []
     if model_size in set('small', 'medium', 'large'): 
-        num_layers = UM.model_num_layers[f'musicgen-{model_size}']
+        num_layers = UMN.model_num_layers[f'musicgen-{model_size}']
         ret = list(range(num_layers))
     return ret
 
@@ -16,12 +16,12 @@ def create_study_name(parser_args):
     return f'{parser_args.expr_type}-{parser_args.dataset}_{parser_args.model_size}-{parser_args.suffix}'
 
 
-def create_or_load_study(parser_args, seed=UM.seed):
+def create_or_load_study(parser_args, seed=UMN.seed):
     ret = {}
 
     cur_study_name = create_study_name(parser_args)
-    sampler_dir = UM.by_projpath(UM.SAMPLER_FOLDER, True)
-    rdb_dir = UM.by_projpath(UM.RDB_FOLDER, True)
+    sampler_dir = UMN.by_projpath(UMN.SAMPLER_FOLDER, True)
+    rdb_dir = UMN.by_projpath(UMN.RDB_FOLDER, True)
     sampler_filepath = os.path.join(sampler_dir, f'{cur_study_name}.pkl')
     rdb_filepath = os.path.join(rdb_dir, f'{cur_study_name}.db')
     resuming = False
@@ -41,7 +41,7 @@ def create_or_load_study(parser_args, seed=UM.seed):
         cur_search_space['layer_idx'] = get_layer_search_space(parser_args.model_size) 
         cur_sampler = optuna.samplers.GridSampler(cur_search_space, seed=seed)
 
-    ret['study'] = optuna.create_study(study_name=cur_study_name, sampler = cur_sampler, storage=rdb_url, direction=UM.OPT_DIRECTION, load_if_exists = (resuming == True and parser_args.restart_study == False))
+    ret['study'] = optuna.create_study(study_name=cur_study_name, sampler = cur_sampler, storage=rdb_url, direction=UMN.OPT_DIRECTION, load_if_exists = (resuming == True and parser_args.restart_study == False))
     return ret
 
 

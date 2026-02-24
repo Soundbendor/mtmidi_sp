@@ -3,7 +3,7 @@ import os
 import wandb
 from optuna.integration.wandb import WeightsAndBiasesCallback as WBC
 
-import util_main as UM
+import util_main as UMN
 
 # https://optuna-integration.readthedocs.io/en/stable/reference/generated/optuna_integration.WeightsAndBiasesCallback.html
 
@@ -36,20 +36,20 @@ def init(wdict):
 
 def build_config(parser_args, datadict, subsetdict):
     _config = {k:v for (k,v) in vars(parser_args).items()}
-    model_shape = UM.get_postacts_shape(parser_args.model_size)
-    _config['num_epochs'] = UM.NUM_EPOCHS
-    _config['batch_size'] = UM.BATCH_SIZE
-    _config['learning_rate'] = UM.LEARNING_RATE
-    _config['is_64bit'] = UM.IS_64BIT
+    model_shape = UMN.get_postacts_shape(parser_args.model_size)
+    _config['num_epochs'] = UMN.NUM_EPOCHS
+    _config['batch_size'] = UMN.BATCH_SIZE
+    _config['learning_rate'] = UMN.LEARNING_RATE
+    _config['is_64bit'] = UMN.IS_64BIT
     _config['model_dim'] = model_shape[1]
     _config['model_num_layers'] = model_shape[0]
-    _config['dataloader_shuffle'] = UM.DATALOADER_SHUFFLE
+    _config['dataloader_shuffle'] = UMN.DATALOADER_SHUFFLE
     if parser_args.expr_type != 'standard_scaler':
-        _config['early_stopping_check_interval'] = UM.EARLY_STOPPING_CHECK_INTERVAL
-        _config['early_stopping_boredom'] = UM.EARLY_STOPPING_BOREDOM
-        _config['linearnnprobe_initial_dropout'] =  UM.LINEARNNPROBE_INITIAL_DROPOUT
+        _config['early_stopping_check_interval'] = UMN.EARLY_STOPPING_CHECK_INTERVAL
+        _config['early_stopping_boredom'] = UMN.EARLY_STOPPING_BOREDOM
+        _config['linearnnprobe_initial_dropout'] =  UMN.LINEARNNPROBE_INITIAL_DROPOUT
     else:
-        _config['standard_scaler_constant_feature_mask'] = UM.STANDARD_SCALER_CONSTANT_FEATURE_MASK
+        _config['standard_scaler_constant_feature_mask'] = UMN.STANDARD_SCALER_CONSTANT_FEATURE_MASK
     _config['train_folds'] = subsetdict['train_folds']
     _config['valid_folds'] = subsetdict['valid_folds']
     _config['test_folds'] = subsetdict['test_folds']
@@ -59,7 +59,7 @@ def build_config(parser_args, datadict, subsetdict):
 
 
 def build_initdict(parser_args, _config):
-    _d = {'entity': entity, 'project': f'mtmidi_sp-{parser_args.expr_type}', 'dir': UM.WANDB_PATH}
+    _d = {'entity': entity, 'project': f'mtmidi_sp-{parser_args.expr_type}', 'dir': UMN.WANDB_PATH}
     _d['config'] = _config
     return _d
 
