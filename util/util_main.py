@@ -15,6 +15,8 @@ EARLY_STOPPING_BOREDOM = 10
 MEMMAP = True
 NUM_EPOCHS = 100
 BATCH_SIZE = 64
+LEARNING_RATE = 10.**(-3)
+# no l2 weight decay (set to -2 in original which meant turn off)
 DATALOADER_SHUFFLE = True
 TRAIN_FOLDS = list(range(1,15))
 VALID_FOLDS = list(range(15,18))

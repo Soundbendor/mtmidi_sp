@@ -39,6 +39,7 @@ def build_config(parser_args, datadict, subsetdict):
     model_shape = UM.get_postacts_shape(parser_args.model_size)
     _config['num_epochs'] = UM.NUM_EPOCHS
     _config['batch_size'] = UM.BATCH_SIZE
+    _config['learning_rate'] = UM.LEARNING_RATE
     _config['is_64bit'] = UM.IS_64BIT
     _config['model_dim'] = model_shape[1]
     _config['model_num_layers'] = model_shape[0]
@@ -55,8 +56,8 @@ def build_config(parser_args, datadict, subsetdict):
     return _config
 
 
-def build_initdict(_config, expr_type):
-    _d = {'entity': entity, 'project': f'mtmidi_sp-{expr_type}', 'dir': UM.WANDB_PATH}
+def build_initdict(parser_args, _config):
+    _d = {'entity': entity, 'project': f'mtmidi_sp-{parser_args.expr_type}', 'dir': UM.WANDB_PATH}
     _d['config'] = _config
     return _d
 

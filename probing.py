@@ -42,7 +42,8 @@ def train_standard_scaler(datadict, subsetdict, configdict, layer_idx = 0, devic
     return ret
 
             
-
+def _objective(study, parser_args, datadict, subsetdict, configdict):
+    pass
 
             
 
@@ -82,19 +83,20 @@ if __name__ == "__main__":
 
     # wandb stuff
     UW.login()
-    wandb_dict = UW.build_initdict(args, datadict, subsetdict)
+    configdict = UW.build_config(args, datadict, subsetdict)
+    wandb_dict = UW.build_initdict(args, configdict)
 
     cur_study = None
     if args.expr_type == 'standard_scaler':
-        for layer_idx in range(wandb_dict['config']['model_num_layers']):
+        for layer_idx in range(configdict['model_num_layers']):
             wandb_dict['config']['layer_idx'] = layer_idx
             run_name = UP.get_run_name(args, layer_idx, is_short = False) 
             short_name = UP.get_run_name(args, layer_idx, is_short = True) 
             wandb_dict['id'] = run_name
             wandb_dict['name'] = short_name
             cur_run = UW.init(wandb_dict)
-            scaler_dict = train_standard_scaler(datadict, subsetdict, wandb_dict['config'], layer_idx = layer_idx, device = device, expr_suffix = args.suffix, log_data=True)
-            UP.save_scaler(scaler_dict['scaler'], run_name, is_64bit = wandb_dict['config']['is_64bit'])
+            scaler_dict = train_standard_scaler(datadict, subsetdict, configdict, layer_idx = layer_idx, device = device, expr_suffix = args.suffix, log_data=True)
+            UP.save_scaler(scaler_dict['scaler'], run_name, is_64bit = configdict['is_64bit'])
             UW.log_scaler_mean_var(cur_run, scaler_dict)
             UW.finish_run(cur_run)
 

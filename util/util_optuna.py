@@ -3,7 +3,7 @@ import optuna
 
 import util_main as UM
 
-linearnn_full-search_space = {'learning_rate_exp': [-3], 'dropout': [0.25, 0.5, 0.75], 'batch_size': [64], 'l2_weight_decay_exp': [-2], 'data_norm': [True]}
+linearnn_full-search_space = {'dropout': [0.25, 0.5, 0.75]}
 
 def get_layer_search_space(model_size):
     ret = []
