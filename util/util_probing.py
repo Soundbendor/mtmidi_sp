@@ -1,13 +1,14 @@
 import copy
 
 import util_main as UMN
+import util_constants as UC
 
 import numpy as np
 import polars as pl
 import torch, torch.utils.data as TUD
 from sklearn.model_selection import train_test_split
 
-def get_train_test_splits(datadict, train_pct = UMN.TRAIN_PCT, test_subpct = UMN.TEST_SUBPCT, seed = UMN.SEED):
+def get_train_test_splits(datadict, train_pct = UC.TRAIN_PCT, test_subpct = UC.TEST_SUBPCT, seed = UC.SEED):
     ret = {}
     if datadict['train_on_middle'] == True:
         num_examples = datadict['num_examples']
@@ -51,7 +52,7 @@ def get_train_test_splits(datadict, train_pct = UMN.TRAIN_PCT, test_subpct = UMN
 
 
 
-def get_train_test_subsets(dataset_obj, datadict, train_folds = UMN.TRAIN_FOLDS, valid_folds =UMN.VALID_FOLDS, test_folds = UMN.TEST_FOLDS, train_pct = UMN.TRAIN_PCT, test_subpct = UMN.TEST_SUBPCT, seed = UMN.SEED):
+def get_train_test_subsets(dataset_obj, datadict, train_folds = UC.TRAIN_FOLDS, valid_folds =UC.VALID_FOLDS, test_folds = UC.TEST_FOLDS, train_pct = UC.TRAIN_PCT, test_subpct = UC.TEST_SUBPCT, seed = UC.SEED):
     idx_dict = {}
     if datadict['train_on_middle'] == True or len(train_folds) == 0:
         # if train_folds is empty or training on middle, randomize with given pct/subpct splits
@@ -104,8 +105,8 @@ def get_run_name(parser_args, layer_idx, is_short = False):
     _dataset = parser_args.dataset
     _model_size = parser_args.model_size
     if is_short == True:
-        _dataset = UMN.DATASET_SHORT[_dataset]
-        _model_size = UMN.MODEL_SIZE_SHORT[_model_size]
+        _dataset = UC.DATASET_SHORT[_dataset]
+        _model_size = UC.MODEL_SIZE_SHORT[_model_size]
     return f'{_dataset}_{_model_size}_{layer_idx}-{parser_args.prefix}'
 
 # input torch, output torch
@@ -138,22 +139,22 @@ def accumulate_truths_preds(truths, truths_to_add, preds, preds_to_add, batch_id
         else:
             return np.hstack((copy.deepcopy(truths),new_truths)), np.hstack((copy.deepcopy(preds), new_preds))
 
-def save_scaler_dict(scaler, run_name, is_64bit = UMN.IS_64BIT):
+def save_scaler_dict(scaler, run_name, is_64bit = UC.IS_64BIT):
     cur_ext = ""
     if is_64bit == True:
         cur_ext = '64.scaler_dict'
     else:
         cur_ext = '32.scaler_dict'
-    scaler_path = UMN.by_projpath(UMN.SCALERS_FOLDER)
+    scaler_path = UMN.by_projpath(UC.SCALERS_FOLDER)
     out_path = os.path.join(scaler_path, f'{run_name}-{cur_ext}')
     torch.save(scaler.state_dict(), out_path)
 
-def load_scaler_dict(scaler, run_name, is_64bit = UMN.IS_64BIT, device='cpu'):
+def load_scaler_dict(scaler, run_name, is_64bit = UC.IS_64BIT, device='cpu'):
     cur_ext = ""
     if is_64bit == True:
         cur_ext = '64.scaler_dict'
     else:
         cur_ext = '32.scaler_dict'
-    scaler_path = UMN.by_projpath(UMN.SCALERS_FOLDER)
+    scaler_path = UMN.by_projpath(UC.SCALERS_FOLDER)
     in_path = os.path.join(scaler_path, f'{run_name}-{cur_ext}')
     scaler.load_state_dict(torch.load(out_path, map_location=device, weights_only = False))

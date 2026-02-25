@@ -1,6 +1,7 @@
 import sys,os,time,argparse,copy,types
 from torch import nn
 import util.util_main as UMN
+import util.util_constants as UC
 from dataclasses import dataclass
 import librosa as lr
 from librosa import feature as lrf
@@ -907,7 +908,7 @@ def get_musicgen_lm_postacts(model, proc, audio, text="", meanpool = True, model
 
 def get_postacts(model_size, cur_dataset, normalize = True, dur = 4., use_64bit = True, logfile_handle=None, recfile_handle = None, memmap = True, pickup = False, fold_num = -1, from_dir = "", to_dir = ""):
     
-    using_hf = cur_dataset in UMN.hf_datasets
+    using_hf = cur_dataset in UC.SYNTHEORY_DATASETS
     # musicgen stuff
     device = 'cpu'
     num_layers = None
@@ -1012,9 +1013,9 @@ if __name__ == '__main__':
 
     from_dir = ""
     if args.from_share == True:
-        from_dir = os.path.join(UMN.SHARE_PATH, 'syntheory_plus')
+        from_dir = os.path.join(UC.SHARE_PATH, 'syntheory_plus')
     if args.to_share == True:
-        to_dir = os.path.join(UMN.SHARE_PATH, 'mtmidi_sp')
+        to_dir = os.path.join(UC.SHARE_PATH, 'mtmidi_sp')
     # miscellaneous logs
     log_fname = get_print_name(dataset, model_size, is_csv = False, normalize = normalize, timestamp = timestamp)
     rec_fname = get_print_name(dataset, model_size, is_csv = True, normalize = normalize, timestamp = timestamp)
@@ -1022,7 +1023,7 @@ if __name__ == '__main__':
     rec_fpath = os.path.join(logdir, rec_fname)
     if debug == True:
         exit()
-    if (dataset in UMN.all_datasets) == False:
+    if (dataset in UC.ALL_DATASETS) == False:
         sys.exit('not a dataset')
     else:
         lf = open(log_fpath, 'a')

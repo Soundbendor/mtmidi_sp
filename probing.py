@@ -2,6 +2,7 @@ import torch, torch.utils.data as TUD
 import optuna, pickle, numpy as np  
 
 import util.util_main as UMN
+import util.util_constants as UC
 import util.util_data as UD
 import util.util_wandb as UW
 import util.util_optuna as UO
@@ -96,8 +97,6 @@ def valid_test_probe(model, scaler, generator, loss_fn, valid_subset, batch_size
 
         truths, preds = UP.accumulate_truths_preds(truths, ground_truth, preds, model_pred, batch_idx, is_classification)
 
-    # metrics calculation
-    metrics = None
     
 
 def _objective(trial, parser_args, datadict, subsetdict, configdict, device='cpu'):
@@ -162,8 +161,8 @@ if __name__ == "__main__":
     parser.add_argument("-sh", "--from_share", type=strtobool, default=False, help="load from share partition")
     parser.add_argument("-sj", "--slurm_job", type=int, default=0, help="slurm job")
     parser.add_argument("-sf", "--suffix", type=int, default=0, help="suffix")
-    parser.add_argument("-tsd", "--torch_seed", type=int, default=UMN.SEED, help="torch random seed")
-    parser.add_argument("-ssd", "--split_seed", type=int, default=UMN.SEED, help="seed for splitting")
+    parser.add_argument("-tsd", "--torch_seed", type=int, default=UC.SEED, help="torch random seed")
+    parser.add_argument("-ssd", "--split_seed", type=int, default=UC.SEED, help="seed for splitting")
 
     args = parser.parse_args()
 
@@ -176,11 +175,11 @@ if __name__ == "__main__":
     torch.manual_seed(args.torch_seed)
     from_dir = ""
     if args.from_share == True:
-        from_dir = os.path.join(UMN.SHARE_PATH, 'syntheory_plus')
+        from_dir = os.path.join(UC.SHARE_PATH, 'syntheory_plus')
     datadict = UD.load_data_dict(args.dataset)
 
     cur_ds = ProbeDataset(datadict, args.model_size, layer_idx=0, from_dir = from_dir, to_torch = True, device = device)
-    subsetdict = UP.get_train_test_subsets(cur_ds, datadict, train_folds = UMN.TRAIN_FOLDS, valid_folds =UMN.VALID_FOLDS, test_folds = UMN.TEST_FOLDS, train_pct = UMN.TRAIN_PCT, test_subpct = UMN.TEST_SUBPCT, seed = args.split_seed)
+    subsetdict = UP.get_train_test_subsets(cur_ds, datadict, train_folds = UC.TRAIN_FOLDS, valid_folds =UC.VALID_FOLDS, test_folds = UC.TEST_FOLDS, train_pct = UC.TRAIN_PCT, test_subpct = UC.TEST_SUBPCT, seed = args.split_seed)
 
     # wandb stuff
     UW.login()
@@ -204,5 +203,5 @@ if __name__ == "__main__":
 
     else:
         # optuna stuff
-        cur_study = UO.create_or_load_study(args, seed=UMN.seed)
+        cur_study = UO.create_or_load_study(args, seed=UC.seed)
 

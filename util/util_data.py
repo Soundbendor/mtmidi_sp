@@ -1,6 +1,7 @@
 import torch
 
 import util_main as UMN
+import util_constants as UC
 import ..data_helpers.polyrhythms as PL
 import ..data_helpers.dynamics as DYN
 import ..data_helpers.seventh_chords as CH7
@@ -110,6 +111,7 @@ def load_data_dict(dataset):
     label_arr = cur_df.select([label]).to_numpy().flatten()
 
     ret = {
+            'dataset': dataset,
             'num_classes': num_classes,
             'num_examples': num_examples,
             'df': cur_df,

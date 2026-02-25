@@ -1,80 +1,9 @@
 import os
-from pathlib import Path
 import numpy as np
 import datasets as HFDS
 import librosa
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-POSTACTS_FOLDER = 'postacts'
-SAMPLER_FOLDER = 'samplers'
-SCALERS_FOLDER = 'scalers'
-RDB_FOLDER = 'rdb'
-NUM_FOLDS = 20
-EARLY_STOPPING_CHECK_INTERVAL = 1
-EARLY_STOPPING_BOREDOM = 10
-MEMMAP = True
-NUM_EPOCHS = 100
-BATCH_SIZE = 64
-LEARNING_RATE = 10.**(-3)
-# no l2 weight decay (set to -2 in original which meant turn off)
-DATALOADER_SHUFFLE = True
-TRAIN_FOLDS = list(range(1,15))
-VALID_FOLDS = list(range(15,18))
-TEST_FOLDS = list(range(18,21))
-IS_64BIT = False
-SEED = 39
-TRAIN_PCT = 0.7
-TEST_SUBPCT = 0.5
-OPT_DIRECTION = 'maximize'
-STANDARD_SCALER_CONSTANT_FEATURE_MASK = True
-LINEARNNPROBE_INITIAL_DROPOUT = True
-
-
-SHARE_PATH = os.path.join(os.sep, 'nfs','hpc', 'share', 'kwand') 
-WANDB_PATH = os.path.join(os.sep, 'nfs','guille', 'eecs_research', 'soundbendor', 'kwand', 'wandb') 
-
-MUSICGEN_SIZES = ["small", "medium", "large"]
-
-DATASET_SHORT = {"polyrhythms": "pl",
-                 "dynamics": "dyn",
-                 "seventh_chords": "ch7",
-                 "mode_mixture": "mm",
-                 "secondary_dominants": "sd",
-                 "tempos": "tpo",
-                 "time_signatures": "ts",
-                 "chords": "chd"
-                 "notes": "not",
-                 "scales": "scl",
-                 "intervals": "ivl",
-                 "simple_progressions": "spg"
-                 }
-
-MODEL_SIZE_SHORT = {"small": "sm", "medium": "med", "large": "lg"}
-# https://github.com/huggingface/transformers/blob/80996194bec45b16d4472a099e64b57e049bc6fd/src/transformers/models/musicgen/convert_musicgen_transformers.py#L120
-ffn_dim = {"musicgen-small": 1024 * 4, "musicgen-medium": 1536 * 4, "musicgen-large": 2048 * 4}
-
-# this time not using initial embeddings
-model_num_layers = {"musicgen-small": 24, "musicgen-medium": 48, "musicgen-large": 48}
-
-### porting a lot of old code from mtmidi
-
-model_sr = 32000
-# same as mtmidi
-# but secondary_dominant -> secondary_dominants
-# modemix_chordprog -> mode_mixture
-# chords7 -> seventh_chords
-new_datasets = set(['polyrhythms', 'dynamics', 'seventh_chords', 'secondary_dominants', 'mode_mixture'])
-
-hf_datasets = set(['tempos', 'time_signatures', 'chords', 'notes', 'scales', 'intervals', 'simple_progressions'])
-chordprog_datasets = set(['secondary_dominant', 'modemix_chordprog'])
-
-models = ['musicgen-small', 'musicgen-medium', 'musicgen-large']
-
-#datasets that are regression
-reg_datasets = set(['tempos'])
-# datasets to train on middle on
-tom_datasets = set(['tempos'])
-all_datasets = hf_datasets.union(new_datasets)
+import util_constants as UC
 
 # https://github.com/brown-palm/syntheory/blob/main/embeddings/models.py
 # takes mean of stereo channels (doesn't rely on loading as mono)
@@ -87,7 +16,7 @@ def load_wav(fpath, dur = 4., normalize = False, sr=32000):
         return librosa.util.normalize(snd)
 
 def by_projpath(subpath=None,make_dir = False, other_projdir = ''):
-    cur_path = PROJECT_ROOT
+    cur_path = UC.PROJECT_ROOT
     if len(other_projdir) > 0:
         cur_path = other_projdir
     if subpath != None:
@@ -109,10 +38,10 @@ def get_hf_model_str(model_size):
 def get_model_postacts_path(model_size, dataset='polyrhythms', return_relative = False, make_dir = False, other_projdir = '', fold_num = -1):
     datapath = None
     if return_relative == False:
-        postactpath = by_projpath(POSTACTS_FOLDER,make_dir = make_dir, other_projdir = other_projdir)
+        postactpath = by_projpath(UC.POSTACTS_FOLDER,make_dir = make_dir, other_projdir = other_projdir)
         datapath = os.path.join(postactpath, dataset)
     else:
-        datapath = POSTACTS_FOLDER
+        datapath = UC.POSTACTS_FOLDER
     modelpath = os.path.join(datapath, f'musicgen-{model_size}')
     if fold_num > 0:
         modelpath = os.path.join(modelpath, f'fold_{fold_num}')
@@ -131,7 +60,7 @@ def filepath_list(file_dir, fold_num=-1, ignore_exts = set(['.csv'])):
     if fold_num < 0:
         files = [os.path.join(file_dir, x) for x in os.listdir(file_dir) if os.path.splitext(x)[-1] not in ignore_exts]
     elif fold_num == 0:
-        for i in range(1,NUM_FOLDS+1):
+        for i in range(1,UC.NUM_FOLDS+1):
             fold_dir = os.path.join(file_dir, f'fold_{i}')
             cur_files = [os.path.join(fold_dir, x) for x in os.listdir(fold_dir) if os.path.splitext(x)[-1] not in ignore_exts]
             files += cur_files
@@ -190,9 +119,9 @@ def ext_replace(old_path, new_ext = 'pt'):
 
 def get_postacts_shape(model_size):
     model_str = ""
-    if model_size in MUSICGEN_SIZES:
+    if model_size in UC.MUSICGEN_SIZES:
         model_str = f'musicgen-{model_size}'
-    return (model_num_layers[model_str], ffn_dim[model_str])
+    return (UC.MODEL_NUM_LAYERS[model_str], UC.FFN_DIM[model_str])
 
 
 # use_shape argument overrides shape getting (useful for baselines)
