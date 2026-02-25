@@ -5,6 +5,9 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 POSTACTS_FOLDER = 'postacts'
 SAMPLER_FOLDER = 'samplers'
 SCALERS_FOLDER = 'scalers'
+CM_FOLDER = 'cm'
+RESULTS_FOLDER = 'res'
+MODELS_FOLDER = 'models'
 RDB_FOLDER = 'rdb'
 NUM_FOLDS = 20
 EARLY_STOPPING_CHECK_INTERVAL = 1
@@ -53,6 +56,22 @@ DATASET_SHORT = {"polyrhythms": "pl",
                  "intervals": "ivl",
                  "simple_progressions": "spg"
                  }
+
+DATASET_PRETTY = {"polyrhythms": "Polyrhythms",
+                 "dynamics": "Dynamics",
+                 "seventh_chords": "Seventh Chords",
+                 "mode_mixture": "Mode Mixture",
+                 "secondary_dominants": "Secondary Dominants",
+                 "tempos": "Tempos",
+                 "time_signatures": "Time Signatures",
+                 "chords": "Chords"
+                 "notes": "Notes",
+                 "scales": "Scales",
+                 "intervals": "Intervals",
+                 "simple_progressions": "Simple Progressions"
+                 }
+
+
 
 MODEL_SIZE_SHORT = {"small": "sm", "medium": "med", "large": "lg"}
 # https://github.com/huggingface/transformers/blob/80996194bec45b16d4472a099e64b57e049bc6fd/src/transformers/models/musicgen/convert_musicgen_transformers.py#L120

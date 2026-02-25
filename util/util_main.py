@@ -25,6 +25,15 @@ def by_projpath(subpath=None,make_dir = False, other_projdir = ''):
             os.makedirs(cur_path)
     return cur_path
 
+# multisubfolder by_projpath
+def by_projpath_multi(subpaths=[],make_dir = False):
+    cur_path = UC.PROJECT_ROOT
+    for subpath in subpaths:
+        cur_path = os.path.join(cur_path, subpath)
+        if os.path.exists(cur_path) == False and make_dir == True:
+            os.makedirs(cur_path)
+    return cur_path
+
 def load_syntheory_train_dataset(ds_name, streaming = True):
     cur_ds =  HFDS.load_dataset("meganwei/syntheory", ds_name, split = 'train', streaming = streaming)
     return cur_ds
@@ -160,3 +169,28 @@ def dict_arrayargs_to_str(cur_dict):
         else:
             ret[k] = v
     return ret
+
+def get_save_path(save_type, configdict, other=None):
+    ext = None
+    subfolder = None
+    dataset = configdict['dataset']
+    expr_type = configdict['expr_type']
+    model_size = configdict['model_size']
+    suffix = configdict['suffix']
+    if save_type == 'cm':
+        subfolder = UC.CM_FOLDER
+        ext = 'png'
+    elif save_type == 'res':
+        subfolder = UC.RESULTS_FOLDER
+        ext = 'csv'
+    elif save_type == 'model':
+        subfolder = UC.MODELS_FOLDER
+        ext = 'model_dict'
+    cur_path = by_projpath_multi(subpaths=[subfolder, dataset, expr_type],make_dir = True)
+    fname = None
+    if other == None:
+        fname = f'{model_size}-{suffix}.{ext}'
+    else:
+        fname = f'{model_size}_{other}-{suffix}.{ext}'
+    return os.path.join(cur_path, fname)
+

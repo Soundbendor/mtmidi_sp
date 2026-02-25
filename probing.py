@@ -2,6 +2,7 @@ import torch, torch.utils.data as TUD
 import optuna, pickle, numpy as np  
 
 import util.util_main as UMN
+import util.util_metrics as UME
 import util.util_constants as UC
 import util.util_data as UD
 import util.util_wandb as UW
@@ -72,7 +73,7 @@ def valid_test_probe(model, scaler, generator, loss_fn, valid_subset, batch_size
     
     total_loss = 0.
     iters = 0
-
+    avg_loss = 0.
     # for accumulating ground truths and predictions
     truths = None
     preds = None
@@ -97,14 +98,16 @@ def valid_test_probe(model, scaler, generator, loss_fn, valid_subset, batch_size
 
         truths, preds = UP.accumulate_truths_preds(truths, ground_truth, preds, model_pred, batch_idx, is_classification)
 
-    
+    if loss_fn != None:
+        avg_loss = total_loss/float(iters)
+    return avg_loss, truths, preds
 
-def _objective(trial, parser_args, datadict, subsetdict, configdict, device='cpu'):
+def _objective(trial, datadict, subsetdict, configdict, device='cpu'):
     dropout = trial.suggest_float('dropout', 0.25, 0.75, step=0.25)
     layer_idx = trial.suggest_categorical('layer_idx', list(range(configdict['model_num_layers'])))
 
 
-    run_name = UP.get_run_name(parser_args, layer_idx, is_short = False)
+    run_name = UP.get_run_name(configdict, layer_idx, is_short = False)
     trial_number = trial.number
     
     subsetdict['train_subset'].dataset.set_layer_idx(layer_idx)
@@ -135,15 +138,51 @@ def _objective(trial, parser_args, datadict, subsetdict, configdict, device='cpu
     using_early_stopping =  configdict['early_stopping_check_interval'] > 0
     boredom = 0
         
-    best_probe_dict = None
-    best_scaler_dict = None
+    best_score = float('-inf')
+    ret_score = float('-inf')
+    best_model_dict = None
+    actual_training_epochs = None
 
+    # now for the actual train/valid loops
     for epoch_idx in range(configdict['num_epochs']):
+        # train/valid
         train_avg_loss = train_probe(model, scaler, torch_gen, opt_fn, loss_fn, subsetdict['train_subset'], batch_size=configdict['batch_size'], shuffle = configdict['dataloader_shuffle'], is_classification = datadict['is_classification'], device=device)
+        valid_avg_loss, valid_truths, valid_preds = valid_test_probe(model, scaler, torch_gen, loss_fn, subsetdict['valid_subset'], batch_size=configdict['batch_size'], shuffle = configdict['dataloader_shuffle'], is_classification = datadict['is_classification'], device=device)
+        # get validation metrics
+        valid_metrics = UME.get_metrics(valid_truths, valid_preds, datadict, configdict, save_to_csv = False, make_cm = False)
+        cur_score = UME.get_optimization_metric(valid_metrics, datadict)
 
+        # early stopping
+        if using_early_stopping == True:
+            if epoch_idx % configdict['early_stopping_check_interval'] == 0:
+                if cur_score > best_score:
+                    best_score = cur_score
+                    boredom = 0
+                    best_model_dict = copy.deepcopy(model.state_dict())
+                else:
+                    boredom += 1
+            if boredom >= config['early_stopping_boredom']:
+                actual_training_epochs = epoch_idx + 1
+                ret_score = best_score
+                break
+            elif epoch_idx == (num_epochs - 1):
+                # end of training, just report what you have
+                actual_training_epochs = epoch_idx + 1
+                best_model_dict = copy.deepcopy(model.state_dict())
+                ret_score = cur_score
 
-    #config['early_stopping_boredom']
+    # model saving
+    if best_model_dict != None:
+        UP.save_probe_dict(best_model_dict, configdict, layer_idx, trial_number)
+    # bookkeeping
+    trial.set_user_attr(key='actual_training_epochs', value=actual_training_epochs)
+    do_str = UP.dropout_string_format(dropout)
+    run_name = UP.get_run_name(configdict, layer_idx, other = do_str, is_short = False) 
+    short_name = UP.get_run_name(configdict, layer_idx, other = do_str, is_short = True)
+    trial.set_user_attr(key='run_name', value=run_name)
+    trial.set_user_attr(key='short_name', value=short_name)
 
+    return ret_score
 
             
 
@@ -182,26 +221,32 @@ if __name__ == "__main__":
     subsetdict = UP.get_train_test_subsets(cur_ds, datadict, train_folds = UC.TRAIN_FOLDS, valid_folds =UC.VALID_FOLDS, test_folds = UC.TEST_FOLDS, train_pct = UC.TRAIN_PCT, test_subpct = UC.TEST_SUBPCT, seed = args.split_seed)
 
     # wandb stuff
-    UW.login()
     configdict = UW.build_config(args, datadict, subsetdict)
     wandb_dict = UW.build_initdict(args, configdict)
+    
+    if args.eval == False:
+        UW.login()
+        if args.expr_type == 'standard_scaler':
+            for layer_idx in range(configdict['model_num_layers']):
+                wandb_dict['config']['layer_idx'] = layer_idx
+                run_name = UP.get_run_name(configdict, layer_idx, is_short = False) 
+                short_name = UP.get_run_name(configdict, layer_idx, is_short = True) 
+                wandb_dict['id'] = run_name
+                wandb_dict['name'] = short_name
+                cur_run = UW.init(wandb_dict)
+                scaler_dict = train_standard_scaler(datadict, subsetdict, configdict, layer_idx = layer_idx, device = device, expr_suffix = args.suffix, log_data=True)
+                UP.save_scaler_dict(scaler_dict['scaler'], run_name, is_64bit = configdict['is_64bit'])
+                UW.log_scaler_mean_var(cur_run, scaler_dict)
+                UW.finish_run(cur_run)
 
-    cur_study = None
-    if args.expr_type == 'standard_scaler':
-        for layer_idx in range(configdict['model_num_layers']):
-            wandb_dict['config']['layer_idx'] = layer_idx
-            run_name = UP.get_run_name(args, layer_idx, is_short = False) 
-            short_name = UP.get_run_name(args, layer_idx, is_short = True) 
-            wandb_dict['id'] = run_name
-            wandb_dict['name'] = short_name
-            cur_run = UW.init(wandb_dict)
-            scaler_dict = train_standard_scaler(datadict, subsetdict, configdict, layer_idx = layer_idx, device = device, expr_suffix = args.suffix, log_data=True)
-            UP.save_scaler_dict(scaler_dict['scaler'], run_name, is_64bit = configdict['is_64bit'])
-            UW.log_scaler_mean_var(cur_run, scaler_dict)
-            UW.finish_run(cur_run)
 
-
-    else:
-        # optuna stuff
-        cur_study = UO.create_or_load_study(args, seed=UC.seed)
+        else:
+            # optuna stuff
+            cur_study = UO.create_or_load_study(args, seed=UC.seed)
+            UO.record_dict_in_study(cur_study, configdict)
+            objective = partial(_objective, datadict=datadict, subsetdict=subsetdict, configdict=configdict, device=device)
+            callback_arr = []
+            if args.use_wandb == True:
+                callback_arr = [UW.get_main_callback(wandb_dict, as_multirun = True), UW.trial_name_callback]
+            cur_study.optimize(objective, timeout = None, n_trials = None, n_jobs=1, gc_after_trial = True, callbacks=callback_arr)
 

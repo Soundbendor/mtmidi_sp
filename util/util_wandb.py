@@ -72,3 +72,16 @@ def log_scaler_mean_var(cur_run, scalerdict):
 
 def finish_run(cur_run):
     cur_run.finish()
+
+
+def get_main_callback(initdict, as_multirun = True): 
+    return WBC(wandb_kwargs=initdict, as_multirun = as_multirun)
+
+def trial_name_callback(study, trial):
+    default_id = f"trial-{trial.number}_layer-{trial.params.get('layer_index', '')}_dropout-{trial.params.get('dropout', '')}"
+    default_name = f"t{trial.number}_l{trial.params.get('layer_index', '')}_do{trial.params.get('dropout', '')}"
+    if wandb.run is not None:
+        wandb.run.id = trial.user_attrs.get('run_name', default_id)
+        wand.run.name = trial.user_attrs.get('short_name', default_name)
+        wandb.run.save()
+

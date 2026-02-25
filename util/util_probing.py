@@ -101,13 +101,23 @@ def get_train_test_subsets(dataset_obj, datadict, train_folds = UC.TRAIN_FOLDS, 
             }
     return ret
 
-def get_run_name(parser_args, layer_idx, is_short = False):
-    _dataset = parser_args.dataset
-    _model_size = parser_args.model_size
+def get_run_name(configdict, layer_idx, other = None is_short = False):
+    _dataset = configdict['dataset']
+    _model_size = configdict['model_size']
     if is_short == True:
         _dataset = UC.DATASET_SHORT[_dataset]
         _model_size = UC.MODEL_SIZE_SHORT[_model_size]
-    return f'{_dataset}_{_model_size}_{layer_idx}-{parser_args.prefix}'
+    ret = None
+    if other == None:
+        ret = f'{_dataset}_{_model_size}_l{layer_idx}-{parser_args.suffix}'
+    else:
+        ret = f'{_dataset}_{_model_size}_l{layer_idx}_{other}-{parser_args.suffix}'
+    return ret 
+
+#format string to make dropout be appendable to a run name
+def dropout_string_format(dropout):
+    dropout_int = int(dropout * 100)
+    return f'do{dropout_int}'
 
 # input torch, output torch
 def accumulate_vecs(cur_vecs, vec_to_add):
@@ -158,3 +168,11 @@ def load_scaler_dict(scaler, run_name, is_64bit = UC.IS_64BIT, device='cpu'):
     scaler_path = UMN.by_projpath(UC.SCALERS_FOLDER)
     in_path = os.path.join(scaler_path, f'{run_name}-{cur_ext}')
     scaler.load_state_dict(torch.load(out_path, map_location=device, weights_only = False))
+
+def save_probe_dict(model_dict, configdict, layer_idx, trial_number):
+    layer_str = f'l{layer_idx}'
+    trial_str = f't{trial_number}'
+    other_str = f'{layer_str}_{trial_str}'
+    save_path = UMN.get_save_path('model', configdict, other=other_str)
+    torch.save(model_dict, save_path)
+

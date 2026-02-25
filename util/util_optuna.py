@@ -16,6 +16,10 @@ def get_layer_search_space(model_size):
 def create_study_name(parser_args):
     return f'{parser_args.expr_type}-{parser_args.dataset}_{parser_args.model_size}-{parser_args.suffix}'
 
+def record_dict_in_study(study, cur_dict):
+    flat_dict = UMN.dict_arrayargs_to_str(cur_dict)
+    for k,v in flat_dict.items():
+        study.set_user_attr(k,v)
 
 def create_or_load_study(parser_args, seed=UC.SEED):
     ret = {}
