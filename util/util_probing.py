@@ -1,7 +1,7 @@
 import copy
 
-import util_main as UMN
-import util_constants as UC
+from . import util_main as UMN
+from . import util_constants as UC
 
 import numpy as np
 import polars as pl

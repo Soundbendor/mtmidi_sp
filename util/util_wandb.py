@@ -3,8 +3,8 @@ import os
 import wandb
 from optuna.integration.wandb import WeightsAndBiasesCallback as WBC
 
-import util_main as UMN
-import util_constants as UC
+from . import util_main as UMN
+from . import util_constants as UC
 
 # https://optuna-integration.readthedocs.io/en/stable/reference/generated/optuna_integration.WeightsAndBiasesCallback.html
 

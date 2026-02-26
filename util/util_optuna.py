@@ -1,8 +1,8 @@
 import os, pickle
 import optuna
 
-import util_main as UMN
-import util_constants as UC
+from . import util_main as UMN
+from . import util_constants as UC
 
 linearnn_full-search_space = {'dropout': [0.25, 0.5, 0.75]}
 
