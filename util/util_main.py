@@ -3,7 +3,7 @@ import numpy as np
 import datasets as HFDS
 import librosa
 
-import util_constants as UC
+from . import util_constants as UC
 
 # https://github.com/brown-palm/syntheory/blob/main/embeddings/models.py
 # takes mean of stereo channels (doesn't rely on loading as mono)

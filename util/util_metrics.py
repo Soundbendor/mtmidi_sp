@@ -1,8 +1,8 @@
 import sklearn.metrics as SKM
 import matplotlib.pyplot as plt
 
-import util_main as UMN
-import util_constants as UC
+from . import util_main as UMN
+from . import util_constants as UC
 
 def save_results_to_csv(resdict, configdict):
     cur_folder = UMN.by_projpath(folder,make_dir = True)

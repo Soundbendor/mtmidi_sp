@@ -1,7 +1,7 @@
 import torch
 
-import util_main as UMN
-import util_constants as UC
+from . import util_main as UMN
+from . import util_constants as UC
 import ..data_helpers.polyrhythms as PL
 import ..data_helpers.dynamics as DYN
 import ..data_helpers.seventh_chords as CH7
