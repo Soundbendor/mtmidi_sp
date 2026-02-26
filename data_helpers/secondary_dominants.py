@@ -1,3 +1,13 @@
+
+#### FOR CLASSIFYING BY SUBSTITUTION TYPE ####
+# shorthand for substitution types
+sub_types = {'orig': 'N', 'secondary_dominant': 'S', 'tritone_sub': 'T'}
+sub_type_arr = ['N', 'S', 'T']
+sub_type_to_idx= {x:i for (i,x) in enumerate(sub_type_arr)}
+idx_to_sub_type = {i:x for (x,i) in sub_type_to_idx.items()}
+
+num_subtypes = len(sub_type_arr)
+
 #### FOR CLASSIFYING BY CHORD PROGRESSION ####
 
 def progtup_to_progstr(progtup, scale_type='', sub_type='N'):
@@ -30,13 +40,4 @@ for scale_type in scale_type_arr:
 subprog_to_idx = {x:i for (i,x) in enumerate(subprog_arr)}
 idx_to_subprog = {i:x for (x,i) in subprog_to_idx.items()}
 num_subprog = len(subprog_arr)
-
-#### FOR CLASSIFYING BY SUBSTITUTION TYPE ####
-# shorthand for substitution types
-sub_types = {'orig': 'N', 'secondary_dominant': 'S', 'tritone_sub': 'T'}
-sub_type_arr = ['N', 'S', 'T']
-sub_type_to_idx= {x:i for (i,x) in enumerate(sub_type_arr)}
-idx_to_sub_type = {i:x for (x,i) in sub_type_to_idx.items()}
-
-num_subtypes = len(sub_type_arr)
 

@@ -101,7 +101,7 @@ def get_train_test_subsets(dataset_obj, datadict, train_folds = UC.TRAIN_FOLDS, 
             }
     return ret
 
-def get_run_name(configdict, layer_idx, other = None is_short = False):
+def get_run_name(configdict, layer_idx, other = None, is_short = False):
     _dataset = configdict['dataset']
     _model_size = configdict['model_size']
     if is_short == True:
@@ -121,7 +121,7 @@ def dropout_string_format(dropout):
 
 # input torch, output torch
 def accumulate_vecs(cur_vecs, vec_to_add):
-    if cur_vecs = None:
+    if cur_vecs == None:
         return vec_to_add
     else:
         return torch.vstack((cur_vecs, vec_to_add))

@@ -1,3 +1,5 @@
+inflection_marker = "-" # marks dynamic types with inflection
+
 # one dynamic
 dyn_cat_one = ["flat"]
 

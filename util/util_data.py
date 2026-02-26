@@ -1,8 +1,10 @@
 import torch
+import os
+import polars as pl
 
 from . import util_main as UMN
 from . import util_constants as UC
-from data_helpers import polyrhythms as PL
+from data_helpers import polyrhythms as POLY
 from data_helpers import dynamics as DYN
 from data_helpers import seventh_chords as CH7
 from data_helpers import mode_mixture as MM
@@ -35,17 +37,17 @@ def load_data_dict(dataset):
     num_examples = len(cur_df)
     train_on_middle = False
     if dataset == 'polyrhythms':
-        num_classes = PL.num_poly
-        classdict = PL.polystr_to_idx
-        idxdict = PL.idx_to_polystr
-        label_arr = PL.class_arr 
+        num_classes = POLY.num_poly
+        classdict = POLY.polystr_to_idx
+        idxdict = POLY.idx_to_polystr
+        label_arr = POLY.class_arr 
         label = 'poly'
     elif dataset == 'dynamics':
         is_balanced = False
         num_classes = DYN.num_categories
         classdict = DYN.dyn_category_to_idx
         idxdict = DYN.dyn_idx_to_category
-        label_arr = DYN. dyn_categories
+        label_arr = DYN.dyn_categories
         label = 'dyn_category'
     elif dataset == "seventh_chords":
         num_classes =  CH7.num_chords
@@ -120,7 +122,8 @@ def load_data_dict(dataset):
             'is_classification': is_classification,
             'label': label,
             'label_arr': label_arr,
-            'is_balanced': is_balanced
+            'is_balanced': is_balanced,
+            'train_on_middle': train_on_middle
             }
     return ret
 

@@ -4,4 +4,4 @@ idx_to_polystr = {i:p for (p,i) in polystr_to_idx.items()}
 
 num_poly = len(polystr_to_idx)
 
-class_arr = [idx_to_polystr(i) for i in range(num_poly)]
+class_arr = [idx_to_polystr[i] for i in range(num_poly)]

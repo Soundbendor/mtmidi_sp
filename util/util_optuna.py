@@ -4,7 +4,7 @@ import optuna
 from . import util_main as UMN
 from . import util_constants as UC
 
-linearnn_full-search_space = {'dropout': [0.25, 0.5, 0.75]}
+linearnn_full_search_space = {'dropout': [0.25, 0.5, 0.75]}
 
 def get_layer_search_space(model_size):
     ret = []
@@ -42,7 +42,7 @@ def create_or_load_study(parser_args, seed=UC.SEED):
     ret['study_seed'] = seed
 
     if cur_sampler == None:
-        cur_search_space = {k:v for (k,v) in linearnn_full-search_space.items()}
+        cur_search_space = {k:v for (k,v) in linearnn_full_search_space.items()}
         cur_search_space['layer_idx'] = get_layer_search_space(parser_args.model_size) 
         cur_sampler = optuna.samplers.GridSampler(cur_search_space, seed=seed)
 
