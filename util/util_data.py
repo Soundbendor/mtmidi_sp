@@ -2,18 +2,18 @@ import torch
 
 from . import util_main as UMN
 from . import util_constants as UC
-from ..data_helpers import polyrhythms as PL
-from ..data_helpers import dynamics as DYN
-from ..data_helpers import seventh_chords as CH7
-from ..data_helpers import mode_mixture as MM
-from ..data_helpers import secondary_dominants as SD
+from data_helpers import polyrhythms as PL
+from data_helpers import dynamics as DYN
+from data_helpers import seventh_chords as CH7
+from data_helpers import mode_mixture as MM
+from data_helpers import secondary_dominants as SD
 
-from ..data_helpers import time_signatures as TSG
-from ..data_helpers import chords as CHD
-from ..data_helpers import notes as NTS
-from ..data_helpers import scales as SCL
-from ..data_helpers import intervals as IVL
-from ..data_helpers import simple_progressions as SPG
+from data_helpers import time_signatures as TSG
+from data_helpers import chords as CHD
+from data_helpers import notes as NTS
+from data_helpers import scales as SCL
+from data_helpers import intervals as IVL
+from data_helpers import simple_progressions as SPG
 
 def get_df(dataset):
     fname = f'{dataset}-metadata.csv'
