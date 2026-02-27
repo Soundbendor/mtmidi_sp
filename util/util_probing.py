@@ -157,7 +157,7 @@ def save_scaler_dict(scaler, run_name, is_64bit = UC.IS_64BIT):
         cur_ext = '64.scaler_dict'
     else:
         cur_ext = '32.scaler_dict'
-    scaler_path = UMN.by_projpath(UC.SCALERS_FOLDER)
+    scaler_path = UMN.by_projpath(UC.SCALERS_FOLDER, make_dir = True)
     out_path = os.path.join(scaler_path, f'{run_name}-{cur_ext}')
     torch.save(scaler.state_dict(), out_path)
 
