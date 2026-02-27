@@ -25,18 +25,18 @@ def train_standard_scaler(datadict, subsetdict, configdict, layer_idx = 0, devic
     scaler = StandardScaler(with_mean = True, with_std = True, use_64bit = configdict['is_64bit'], dim=configdict['model_dim'], use_constant_feature_mask = configdict['standard_scaler_constant_feature_mask'], device = device)
     scaler.eval() # no learnable weights, set anyways
 
-    train_ds.set_layer_idx(layer_idx)
+    train_ds.dataset.set_layer_idx(layer_idx)
     
     mean_vecs = None
     var_vecs = None
     for epoch_idx in range(configdict['num_epochs']):
-        train_dl = TUD.DataLoader(subsetdict['train_subset'], batch_size = config_dict['batch_size'], shuffle=configdict['dataloader_shuffle'], generator=torch_gen)
+        train_dl = TUD.DataLoader(subsetdict['train_subset'], batch_size = configdict['batch_size'], shuffle=configdict['dataloader_shuffle'], generator=torch_gen)
         for batch_idx, data in enumerate(train_dl):
             ipt, ground_truth = data
             scaler.partial_fit(ipt)
         if log_data == True:
-            mean_vecs = UP.accumulate_torch_vecs(mean_vecs, scaler.get_mean())
-            var_vecs = UP.accumulate_torch_vecs(var_vecs, scaler.get_var())
+            mean_vecs = UP.accumulate_vecs(mean_vecs, scaler.get_mean())
+            var_vecs = UP.accumulate_vecs(var_vecs, scaler.get_var())
     
     ret['scaler'] = scaler
     ret['mean_vecs'] = mean_vecs
@@ -214,7 +214,7 @@ if __name__ == "__main__":
     torch.manual_seed(args.torch_seed)
     from_dir = ""
     if args.from_share == True:
-        from_dir = os.path.join(UC.SHARE_PATH, 'syntheory_plus')
+        from_dir = os.path.join(UC.SHARE_PATH, 'mtmidi_sp')
     datadict = UD.load_data_dict(args.dataset)
 
     cur_ds = ProbeDataset(datadict, args.model_size, layer_idx=0, from_dir = from_dir, to_torch = True, device = device)

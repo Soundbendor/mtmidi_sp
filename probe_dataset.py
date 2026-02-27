@@ -5,6 +5,7 @@ import util.util_data as UD
 class ProbeDataset(TUD.Dataset):
     def __init__(self, datadict, model_size, layer_idx=0, from_dir = '', to_torch = True, device ='cpu'):
         self.df = datadict['df']
+        self.dataset = datadict['dataset']
         self.classdict = datadict['classdict']
         self.label = datadict['label']
         self.layer_idx = layer_idx
@@ -25,7 +26,7 @@ class ProbeDataset(TUD.Dataset):
         cur_name = cur_row['name']
         cur_fold = cur_row['fold']
         cur_truth = self.classdict[cur_row[self.label]]
-        cur_arr = UD.get_memmap_at_idx(cur_name, cur_fold, self.model_size, self.dataset, self.layer_idx, use_64bit=self.is_64bit, to_torch = self.to_torch, other_projdir = self.from_dir, device=self.device)
+        cur_arr = UD.get_memmap_at_idx(f'{cur_name}.wav', cur_fold, self.model_size, self.dataset, self.layer_idx, use_64bit=self.is_64bit, to_torch = self.to_torch, other_projdir = self.from_dir, device=self.device)
         return cur_arr, cur_truth
 
 

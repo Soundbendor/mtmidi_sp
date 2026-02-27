@@ -15,10 +15,10 @@ from . import util_constants as UC
 # https://docs.wandb.ai/models/ref/python/functions/login
 
 entity='soundbendor'
-
+cur_dir = os.path.dirname(os.path.realpath(__file__))
 def login():
     _key = ''
-    with open('wandbkey', 'r') as f:
+    with open(os.path.join(cur_dir, 'wandbkey'), 'r') as f:
         _tmp = f.readlines()
         _key = _tmp[0].strip()
     wandb.login(key = _key)

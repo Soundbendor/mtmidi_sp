@@ -1,4 +1,5 @@
 import copy
+import os
 
 from . import util_main as UMN
 from . import util_constants as UC
@@ -103,15 +104,16 @@ def get_train_test_subsets(dataset_obj, datadict, train_folds = UC.TRAIN_FOLDS, 
 
 def get_run_name(configdict, layer_idx, other = None, is_short = False):
     _dataset = configdict['dataset']
+    suffix = configdict['suffix']
     _model_size = configdict['model_size']
     if is_short == True:
         _dataset = UC.DATASET_SHORT[_dataset]
         _model_size = UC.MODEL_SIZE_SHORT[_model_size]
     ret = None
     if other == None:
-        ret = f'{_dataset}_{_model_size}_l{layer_idx}-{parser_args.suffix}'
+        ret = f'{_dataset}_{_model_size}_l{layer_idx}-{suffix}'
     else:
-        ret = f'{_dataset}_{_model_size}_l{layer_idx}_{other}-{parser_args.suffix}'
+        ret = f'{_dataset}_{_model_size}_l{layer_idx}_{other}-{suffix}'
     return ret 
 
 #format string to make dropout be appendable to a run name

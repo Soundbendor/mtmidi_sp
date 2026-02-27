@@ -136,12 +136,12 @@ class StandardScaler(nn.Module):
         return self.transform(X)
 
     # adding: getters for monitoring
-    def get_mean():
+    def get_mean(self):
         return self.mean.data.detach()
 
-    def get_var():
+    def get_var(self):
         return self.var.data.detach()
 
-    def get_scale():
+    def get_scale(self):
         return self.scale.data.detach()
 
