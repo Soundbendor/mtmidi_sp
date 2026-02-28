@@ -255,7 +255,7 @@ if __name__ == "__main__":
                 scaler_dict = train_standard_scaler(datadict, subsetdict, configdict, layer_idx = layer_idx, device = device, expr_suffix = args.suffix, log_data=True)
                 UP.save_scaler_dict(scaler_dict['scaler'], run_name, is_64bit = configdict['is_64bit'])
                 UW.log_scaler_batch_mean_var(cur_run, scaler_dict)
-                UP.log_scaler_epoch_mean_var(cur_run, scaler_dict)
+                UP.log_scaler_epoch_mean_var(run_name, scaler_dict)
                 UW.finish_run(cur_run)
 
 

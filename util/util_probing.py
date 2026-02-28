@@ -178,7 +178,7 @@ def save_probe_dict(model_dict, configdict, layer_idx, trial_number):
     save_path = UMN.get_save_path('model', configdict, other=other_str)
     torch.save(model_dict, save_path)
 
-def log_scaler_epoch_mean_var(cur_run, scalerdict):
+def log_scaler_epoch_mean_var(run_name, scalerdict):
     means = scalerdict['mean_vecs_epoch'].detach().cpu().numpy()
     variances = scalerdict['var_vecs_epoch'].detach().cpu().numpy() 
     scaler_path = UMN.by_projpath(UC.SCALERS_DOC_FOLDER, make_dir = True)
