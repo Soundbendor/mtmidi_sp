@@ -65,9 +65,9 @@ def build_initdict(parser_args, _config):
     _d['config'] = _config
     return _d
 
-def log_scaler_mean_var(cur_run, scalerdict):
-    means = scalerdict['mean_vecs'].detach().cpu().numpy().T
-    variances = scalerdict['var_vecs'].detach().cpu().numpy().T 
+def log_scaler_batch_mean_var(cur_run, scalerdict):
+    means = scalerdict['mean_vecs_batch'].detach().cpu().numpy().T
+    variances = scalerdict['var_vecs_batch'].detach().cpu().numpy().T 
     fig, axes = plt.subplots(2, 1, figsize=(12, 6))
     for ax, data, title in zip(axes, [means, variances], ["Running Mean", "Running Variance"]):
         im = ax.imshow(data, cmap="coolwarm", aspect="auto")

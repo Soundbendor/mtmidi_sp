@@ -5,6 +5,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 POSTACTS_FOLDER = 'postacts'
 SAMPLER_FOLDER = 'samplers'
 SCALERS_FOLDER = 'scalers'
+SCALERS_DOC_FOLDER = 'scalers_doc'
 CM_FOLDER = 'cm'
 RESULTS_FOLDER = 'res'
 MODELS_FOLDER = 'model_models'

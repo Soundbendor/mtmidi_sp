@@ -78,7 +78,7 @@ def get_train_test_subsets(dataset_obj, datadict, train_folds = UC.TRAIN_FOLDS, 
         cur_label = datadict['label']
         train_df = datadict['df'][idx_dict['train_idxs']]
         class_amounts = {k:v[0] for (k,v) in train_df[cur_label].value_counts().rows_by_key(cur_label).items()}
-        amount_arr = np.array([class_amounts(k) for k in datadict['label_arr']])
+        amount_arr = np.array([class_amounts[k] for k in datadict['label_arr']])
         inv_class_prop = train_size/amount_arr
         weights = inv_class_prop/np.max(inv_class_prop)
     if idx_dict['valid_idxs'].shape[0] > 0:
@@ -177,4 +177,13 @@ def save_probe_dict(model_dict, configdict, layer_idx, trial_number):
     other_str = f'{layer_str}_{trial_str}'
     save_path = UMN.get_save_path('model', configdict, other=other_str)
     torch.save(model_dict, save_path)
+
+def log_scaler_epoch_mean_var(cur_run, scalerdict):
+    means = scalerdict['mean_vecs_epoch'].detach().cpu().numpy()
+    variances = scalerdict['var_vecs_epoch'].detach().cpu().numpy() 
+    scaler_path = UMN.by_projpath(UC.SCALERS_DOC_FOLDER, make_dir = True)
+    out_path_means = os.path.join(scaler_path, f'{run_name}-means.npy')
+    np.save(out_path_means, means, allow_pickle = True)
+    out_path_vars = os.path.join(scaler_path, f'{run_name}-vars.npy')
+    np.save(out_path_vars, variances, allow_pickle = True)
 

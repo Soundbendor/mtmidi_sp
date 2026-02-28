@@ -27,20 +27,38 @@ def train_standard_scaler(datadict, subsetdict, configdict, layer_idx = 0, devic
 
     train_ds.dataset.set_layer_idx(layer_idx)
     
-    mean_vecs = None
-    var_vecs = None
+    mean_vecs_batch = None
+    var_vecs_batch = None
+
+    mean_vecs_epoch = None
+    var_vecs_epoch = None
     for epoch_idx in range(configdict['num_epochs']):
         train_dl = TUD.DataLoader(subsetdict['train_subset'], batch_size = configdict['batch_size'], shuffle=configdict['dataloader_shuffle'], generator=torch_gen)
+
+        if log_data == True and epoch_idx % 20 == 0:
+            mean_vecs_epoch = UP.accumulate_vecs(mean_vecs_epoch, scaler.get_mean())
+            var_vecs_epoch = UP.accumulate_vecs(var_vecs_epoch, scaler.get_var())
         for batch_idx, data in enumerate(train_dl):
+            if log_data == True:
+                mean_vecs_batch = UP.accumulate_vecs(mean_vecs_batch, scaler.get_mean())
+                var_vecs_batch = UP.accumulate_vecs(var_vecs_batch, scaler.get_var())
+
             ipt, ground_truth = data
             scaler.partial_fit(ipt)
-        if log_data == True:
-            mean_vecs = UP.accumulate_vecs(mean_vecs, scaler.get_mean())
-            var_vecs = UP.accumulate_vecs(var_vecs, scaler.get_var())
+
+    if log_data == True:
+            mean_vecs_batch = UP.accumulate_vecs(mean_vecs_batch, scaler.get_mean())
+            var_vecs_batch = UP.accumulate_vecs(var_vecs_batch, scaler.get_var())
+    if log_data == True:
+        mean_vecs_epoch = UP.accumulate_vecs(mean_vecs_epoch, scaler.get_mean())
+        var_vecs_epoch = UP.accumulate_vecs(var_vecs_epoch, scaler.get_var())
     
     ret['scaler'] = scaler
-    ret['mean_vecs'] = mean_vecs
-    ret['var_vecs'] = var_vecs
+    ret['mean_vecs_batch'] = mean_vecs_batch
+    ret['var_vecs_batch'] = var_vecs_batch
+
+    ret['mean_vecs_epoch'] = mean_vecs_epoch
+    ret['var_vecs_epoch'] = var_vecs_epoch
     return ret
 
 
@@ -236,7 +254,8 @@ if __name__ == "__main__":
                 cur_run = UW.init(wandb_dict)
                 scaler_dict = train_standard_scaler(datadict, subsetdict, configdict, layer_idx = layer_idx, device = device, expr_suffix = args.suffix, log_data=True)
                 UP.save_scaler_dict(scaler_dict['scaler'], run_name, is_64bit = configdict['is_64bit'])
-                UW.log_scaler_mean_var(cur_run, scaler_dict)
+                UW.log_scaler_batch_mean_var(cur_run, scaler_dict)
+                UP.log_scaler_epoch_mean_var(cur_run, scaler_dict)
                 UW.finish_run(cur_run)
 
 
