@@ -867,8 +867,7 @@ def path_handler(in_filepath, using_hf=False, model_sr = 44100, dur = 4., normal
         print(f"loading {hf_path}", file=lf)
         out_fname = UMN.ext_replace(hf_path, new_ext=out_ext)
         fbasename = UMN.ext_replace(hf_path, new_ext='')
-        audio = UHF.get_from_entry_syntheory_audio(hf_path, mono=True, normalize =normalize, dur = dur, sr=model_sr)
-        if aud_sr != model_sr:
+        audio = UHF.get_from_entry_syntheory_audio(in_filepath, mono=True, normalize =normalize, dur = dur, sr=model_sr)
     return {'in_fpath': in_filepath, 'out_fname': out_fname, 'audio': audio, 'fname': fbasename, 'fold_num': fold_num}
 
 # same as get_musicgen_lm_hidden_states but swap out outputs.decoder_hidden_states with decoder_post_activations
@@ -959,7 +958,6 @@ def get_postacts(model_size, cur_dataset, normalize = True, dur = 4., use_64bit 
         # store by model_size (and fold_num if not using_hf)
         emb_file = None
         np_arr = None
-        f = UMN.get_basename(in_fpath) 
         if memmap == True:
             emb_file = UMN.get_postacts_file(model_size, dataset=cur_dataset, fname=out_fname, use_64bit = use_64bit, write=True, use_shape = None, other_projdir = to_dir, fold_num = fold_num)
         print(f'--- extracting musicgen_lm for {fpath} ---', file=logfile_handle)

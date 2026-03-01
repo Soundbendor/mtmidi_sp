@@ -1,5 +1,6 @@
 import librosa
 import datasets as HFDS
+import numpy as np
 
 def load_syntheory_train_dataset(ds_name, streaming = True):
     cur_ds =  HFDS.load_dataset("meganwei/syntheory", ds_name, split = 'train', streaming = streaming)
@@ -16,8 +17,8 @@ def get_from_entry_syntheory_audio(cur_entry, mono=True, normalize =True, dur = 
     else:
         cur_arr = cur_aud['array'].flatten()
     if cur_sr != sr:
-        cur_arr = lr.resample(audio, orig_sr=aud_sr, target_sr=sr)
+        cur_arr = librosa.resample(cur_arr, orig_sr=cur_sr, target_sr=sr)
     if normalize == True:
-        cur_arr librosa.util.normalize(snd)
+        cur_arr = librosa.util.normalize(cur_arr)
     want_samp = int(sr * dur)
     return cur_arr[:want_samp]
