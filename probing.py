@@ -121,9 +121,16 @@ def valid_test_probe(model, scaler, generator, loss_fn, valid_subset, batch_size
     return avg_loss, truths, preds
 
 def _objective(trial, datadict, subsetdict, configdict, device='cpu'):
-    dropout = trial.suggest_float('dropout', 0.25, 0.75, step=0.25)
-    layer_idx = trial.suggest_categorical('layer_idx', list(range(configdict['model_num_layers'])))
+    #dropout = trial.suggest_float('dropout', 0.25, 0.75, step=0.25)
+    dropout = 0
 
+    layer_idx = trial.suggest_categorical('layer_idx', list(range(configdict['model_num_layers'])))
+    
+    weight_decay_exp = trial.suggest_int('weight_decay_exp', -4, 0, step= 1)
+    weight_decay = 0
+
+    if weight_decay_exp < 0:
+        weight_ecay = 10.**weight_decay_exp
 
     run_name = UP.get_run_name(configdict, layer_idx, is_short = False)
     trial_number = trial.number
@@ -142,7 +149,7 @@ def _objective(trial, datadict, subsetdict, configdict, device='cpu'):
     # init rng
     torch_gen = torch.Generator(device=device)
     # init opt/loss
-    opt_fn = torch.optim.Adam(model.parameters(), lr=configdict['learning_rate'])
+    opt_fn = torch.optim.Adam(model.parameters(), lr=configdict['learning_rate'], weight_decay=weight_decay)
     loss_fn = None
     if datadict['is_classification'] == True:
         if datadict['is_balanced'] == True:
@@ -194,9 +201,9 @@ def _objective(trial, datadict, subsetdict, configdict, device='cpu'):
         UP.save_probe_dict(best_model_dict, configdict, layer_idx, trial_number)
     # bookkeeping
     trial.set_user_attr(key='actual_training_epochs', value=actual_training_epochs)
-    do_str = UP.dropout_string_format(dropout)
-    run_name = UP.get_run_name(configdict, layer_idx, other = do_str, is_short = False) 
-    short_name = UP.get_run_name(configdict, layer_idx, other = do_str, is_short = True)
+    #do_str = UP.dropout_string_format(dropout)
+    run_name = UP.get_run_name(configdict, layer_idx, other = UP.weight_decay_string(wd_exp, is_short = False), is_short = False) 
+    short_name = UP.get_run_name(configdict, layer_idx, other = UP.weight_decay_string(wd_exp, is_short = True), is_short = True)
     trial.set_user_attr(key='run_name', value=run_name)
     trial.set_user_attr(key='short_name', value=short_name)
 
