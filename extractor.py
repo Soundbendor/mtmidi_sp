@@ -2,6 +2,7 @@ import sys,os,time,argparse,copy,types
 from torch import nn
 import util.util_main as UMN
 import util.util_constants as UC
+import util.util_hf as UHF
 from dataclasses import dataclass
 import librosa as lr
 from librosa import feature as lrf
@@ -866,9 +867,7 @@ def path_handler(in_filepath, using_hf=False, model_sr = 44100, dur = 4., normal
         print(f"loading {hf_path}", file=lf)
         out_fname = UMN.ext_replace(hf_path, new_ext=out_ext)
         fbasename = UMN.ext_replace(hf_path, new_ext='')
-    aud_sr = None
-    if using_hf == True:
-        audio, aud_sr = UHF.get_from_entry_syntheory_audio(fbasename, mono=True, normalize =normalize, dur = dur, sr=model_sr)
+        audio = UHF.get_from_entry_syntheory_audio(hf_path, mono=True, normalize =normalize, dur = dur, sr=model_sr)
         if aud_sr != model_sr:
     return {'in_fpath': in_filepath, 'out_fname': out_fname, 'audio': audio, 'fname': fbasename, 'fold_num': fold_num}
 
@@ -922,7 +921,7 @@ def get_postacts(model_size, cur_dataset, normalize = True, dur = 4., use_64bit 
         out_ext = 'npy'
     if using_hf == True:
         fold_num = -1 # don't care about fold folders
-        cur_pathlist = UMN.load_syntheory_train_dataset(cur_dataset)
+        cur_pathlist = UHF.load_syntheory_train_dataset(cur_dataset)
     else:
         cur_pathlist = UMN.filepath_list(wav_path, fold_num=fold_num, ignore_exts = set(['.csv']))
 

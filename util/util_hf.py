@@ -11,12 +11,13 @@ def get_from_entry_syntheory_audio(cur_entry, mono=True, normalize =True, dur = 
     cur_aud = cur_entry['audio']
     cur_sr = cur_aud['sampling_rate']
     cur_arr = None
-    want_samp = int(np.round(cur_sr * dur))
     if cur_aud['array'].shape[0] > 1:
         cur_arr = np.mean(cur_aud['array'], axis=0)
     else:
         cur_arr = cur_aud['array'].flatten()
-audio = lr.resample(audio, orig_sr=aud_sr, target_sr=model_sr)
+    if cur_sr != sr:
+        cur_arr = lr.resample(audio, orig_sr=aud_sr, target_sr=sr)
     if normalize == True:
         cur_arr librosa.util.normalize(snd)
-    return cur_arr[:want_samp], cur_sr
+    want_samp = int(sr * dur)
+    return cur_arr[:want_samp]
