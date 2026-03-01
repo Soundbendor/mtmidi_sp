@@ -1,6 +1,5 @@
 import os
 import numpy as np
-import datasets as HFDS
 import librosa
 
 from . import util_constants as UC
@@ -33,10 +32,6 @@ def by_projpath_multi(subpaths=[],make_dir = False):
         if os.path.exists(cur_path) == False and make_dir == True:
             os.makedirs(cur_path)
     return cur_path
-
-def load_syntheory_train_dataset(ds_name, streaming = True):
-    cur_ds =  HFDS.load_dataset("meganwei/syntheory", ds_name, split = 'train', streaming = streaming)
-    return cur_ds
 
 ### new stuff
 def get_hf_model_str(model_size):

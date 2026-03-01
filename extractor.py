@@ -862,16 +862,14 @@ def path_handler(in_filepath, using_hf=False, model_sr = 44100, dur = 4., normal
         # don't need to load audio if jukebox
         audio = UMN.load_wav(in_filepath, dur = dur, normalize = normalize, sr = model_sr)
     else:
-        hf_path = f['audio']['path']
+        hf_path = in_filepath['audio']['path']
         print(f"loading {hf_path}", file=lf)
         out_fname = UMN.ext_replace(hf_path, new_ext=out_ext)
         fbasename = UMN.ext_replace(hf_path, new_ext='')
     aud_sr = None
     if using_hf == True:
-        fbasename = UMN.get_basename(in_filepath)
-        audio, aud_sr = UMN.get_from_entry_syntheory_audio(fbasename, mono=True, normalize =normalize, dur = dur)
+        audio, aud_sr = UHF.get_from_entry_syntheory_audio(fbasename, mono=True, normalize =normalize, dur = dur, sr=model_sr)
         if aud_sr != model_sr:
-            audio = lr.resample(audio, orig_sr=aud_sr, target_sr=model_sr)
     return {'in_fpath': in_filepath, 'out_fname': out_fname, 'audio': audio, 'fname': fbasename, 'fold_num': fold_num}
 
 # same as get_musicgen_lm_hidden_states but swap out outputs.decoder_hidden_states with decoder_post_activations
