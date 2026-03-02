@@ -8,6 +8,8 @@ import util.util_data as UD
 import util.util_wandb as UW
 import util.util_optuna as UO
 import util.util_probing as UP
+import util.util_rdb as UR
+
 from models.linearnnprobe import LinearNNProbe
 from models.standard_scaler import StandardScaler
 from probe_dataset import ProbeDataset
@@ -20,7 +22,10 @@ import os, sys, time, argparse, tomllib
 # statistics gathering: first-pass (standard_scaler)
 def train_standard_scaler(datadict, subsetdict, configdict, layer_idx = 0, device = 'cpu', expr_suffix = 0, log_data=True):
     ret = {}
+    # init rng
     torch_gen = torch.Generator(device=device)
+    torch_gen.manual_seed(configdict['torch_seed'])
+
     train_ds = subsetdict['train_subset']
     scaler = StandardScaler(with_mean = True, with_std = True, use_64bit = configdict['is_64bit'], dim=configdict['model_dim'], use_constant_feature_mask = configdict['standard_scaler_constant_feature_mask'], device = device)
     scaler.eval() # no learnable weights, set anyways
@@ -62,7 +67,7 @@ def train_standard_scaler(datadict, subsetdict, configdict, layer_idx = 0, devic
     return ret
 
 
-def train_probe(model, scaler, generator, opt_fn, loss_fn, train_subset, batch_size=64, shuffle = True, is_classification = True, device='cpu'):
+def train_model(model, scaler, generator, opt_fn, loss_fn, train_subset, batch_size=64, shuffle = True, is_classification = True, device='cpu'):
     train_dl = TUD.DataLoader(train_subset, batch_size = batch_size, shuffle=shuffle, generator=generator)
     
     total_loss = 0.
@@ -86,7 +91,7 @@ def train_probe(model, scaler, generator, opt_fn, loss_fn, train_subset, batch_s
     avg_loss = total_loss/float(iters)
     return avg_loss
 
-def valid_test_probe(model, scaler, generator, loss_fn, valid_subset, batch_size=64, shuffle = True, is_classification = True, device='cpu'):
+def valid_test_model(model, scaler, generator, loss_fn, valid_subset, batch_size=64, shuffle = True, is_classification = True, device='cpu'):
     valid_dl = TUD.DataLoader(train-subset, batch_size = batch_size, shuffle=shuffle, generator=generator)
     
     total_loss = 0.
@@ -122,15 +127,14 @@ def valid_test_probe(model, scaler, generator, loss_fn, valid_subset, batch_size
 
 def _objective(trial, datadict, subsetdict, configdict, device='cpu'):
     #dropout = trial.suggest_float('dropout', 0.25, 0.75, step=0.25)
-    dropout = 0
 
     layer_idx = trial.suggest_categorical('layer_idx', list(range(configdict['model_num_layers'])))
     
-    weight_decay_exp = trial.suggest_int('weight_decay_exp', -4, 0, step= 1)
-    weight_decay = 0
+    l2_weight_decay_exp = trial.suggest_int('l2_weight_decay_exp', -4, 0, step= 1)
+    l2_weight_decay = 0
 
-    if weight_decay_exp < 0:
-        weight_ecay = 10.**weight_decay_exp
+    if l2_weight_decay_exp < 0:
+        l2_weight_ecay = 10.**l2_weight_decay_exp
 
     run_name = UP.get_run_name(configdict, layer_idx, is_short = False)
     trial_number = trial.number
@@ -144,12 +148,13 @@ def _objective(trial, datadict, subsetdict, configdict, device='cpu'):
     scaler.eval()
 
     # init model
-    model = LinearNNProbe(in_dim =configdict['model_dim'], out_dim = datadict['num_classes'], dropout = dropout , initial_dropout = configdict['linearnnprobe_initial_dropout'])
+    model = LinearNNProbe(in_dim =configdict['model_dim'], out_dim = datadict['num_classes'], dropout = configdict['linearnnprobe_dropout_value'] , initial_dropout = configdict['linearnnprobe_initial_dropout'])
 
     # init rng
     torch_gen = torch.Generator(device=device)
+    torch_gen.manual_seed(configdict['torch_seed'])
     # init opt/loss
-    opt_fn = torch.optim.Adam(model.parameters(), lr=configdict['learning_rate'], weight_decay=weight_decay)
+    opt_fn = torch.optim.Adam(model.parameters(), lr=configdict['learning_rate'], weight_decay=l2_weight_decay)
     loss_fn = None
     if datadict['is_classification'] == True:
         if datadict['is_balanced'] == True:
@@ -171,8 +176,8 @@ def _objective(trial, datadict, subsetdict, configdict, device='cpu'):
     # now for the actual train/valid loops
     for epoch_idx in range(configdict['num_epochs']):
         # train/valid
-        train_avg_loss = train_probe(model, scaler, torch_gen, opt_fn, loss_fn, subsetdict['train_subset'], batch_size=configdict['batch_size'], shuffle = configdict['dataloader_shuffle'], is_classification = datadict['is_classification'], device=device)
-        valid_avg_loss, valid_truths, valid_preds = valid_test_probe(model, scaler, torch_gen, loss_fn, subsetdict['valid_subset'], batch_size=configdict['batch_size'], shuffle = configdict['dataloader_shuffle'], is_classification = datadict['is_classification'], device=device)
+        train_avg_loss = train_model(model, scaler, torch_gen, opt_fn, loss_fn, subsetdict['train_subset'], batch_size=configdict['batch_size'], shuffle = configdict['dataloader_shuffle'], is_classification = datadict['is_classification'], device=device)
+        valid_avg_loss, valid_truths, valid_preds = valid_test_model(model, scaler, torch_gen, loss_fn, subsetdict['valid_subset'], batch_size=configdict['batch_size'], shuffle = configdict['dataloader_shuffle'], is_classification = datadict['is_classification'], device=device)
         # get validation metrics
         valid_metrics = UME.get_metrics(valid_truths, valid_preds, datadict, configdict, save_to_csv = False, make_cm = False)
         cur_score = UME.get_optimization_metric(valid_metrics, datadict)
@@ -198,7 +203,7 @@ def _objective(trial, datadict, subsetdict, configdict, device='cpu'):
 
     # model saving
     if best_model_dict != None:
-        UP.save_probe_dict(best_model_dict, configdict, layer_idx, trial_number)
+        UP.save_model_dict(best_model_dict, configdict, layer_idx, trial_number)
     # bookkeeping
     trial.set_user_attr(key='actual_training_epochs', value=actual_training_epochs)
     #do_str = UP.dropout_string_format(dropout)
@@ -250,6 +255,7 @@ if __name__ == "__main__":
     wandb_dict = UW.build_initdict(args, configdict)
     
     if args.eval == False:
+        # TRAINING ==========
         UW.login()
         if args.expr_type == 'standard_scaler':
             for layer_idx in range(configdict['model_num_layers']):
@@ -268,11 +274,37 @@ if __name__ == "__main__":
 
         else:
             # optuna stuff
-            cur_study = UO.create_or_load_study(args, seed=UC.seed)
+            cur_study = UO.create_or_load_study(args, seed=UC.SEED)
             UO.record_dict_in_study(cur_study, configdict)
             objective = partial(_objective, datadict=datadict, subsetdict=subsetdict, configdict=configdict, device=device)
             callback_arr = []
             if args.use_wandb == True:
                 callback_arr = [UW.get_main_callback(wandb_dict, as_multirun = True), UW.trial_name_callback]
             cur_study.optimize(objective, timeout = None, n_trials = None, n_jobs=1, gc_after_trial = True, callbacks=callback_arr)
+    else:
+        # EVALUATION ========== 
+
+        # load study and get best params given rdb
+        cur_study = UO.create_or_load_study(args, seed=UC.SEED)
+        best_param_dict, best_trial_dict, attr_dict = UR.get_best_params(cur_study) 
+        layer_idx = best_param_dict['layer_idx']['value']
+        run_name = UP.get_run_name(configdict, layer_idx, is_short = False)
+
+        # some more init
+        # init rng
+        torch_gen = torch.Generator(device=device)
+        torch_gen.manual_seed(configdict['torch_seed'])
+
+        # init/load models
+        scaler = StandardScaler(with_mean = True, with_std = True, use_64bit = configdict['is_64bit'], dim=configdict['model_dim'], use_constant_feature_mask = configdict['standard_scaler_constant_feature_mask'], device = device)
+        UP.load_scaler_dict(scaler, run_name, is_64bit = configdict['is_64bit'], device=device)
+        scaler.eval()
+
+        model = LinearNNProbe(in_dim =configdict['model_dim'], out_dim = datadict['num_classes'], dropout = configdict['linearnnprobe_dropout_value'] , initial_dropout = configdict['linearnnprobe_initial_dropout'])
+
+        UP.load_model_dict(model, configdict, layer_idx, trial_number, device=device)
+        subsetdict['test_subset'].dataset.set_layer_idx(layer_idx)
+        test_avg_loss, test_truths, test_preds = valid_test_model(model, scaler, torch_gen, None, subsetdict['test_subset'], batch_size=configdict['batch_size'], shuffle = configdict['dataloader_shuffle'], is_classification = datadict['is_classification'], device=device)
+        # get test metrics
+        test_metrics = UME.get_metrics(test_truths, test_preds, datadict, configdict, save_to_csv = True, make_cm = True)
 

@@ -183,12 +183,20 @@ def load_scaler_dict(scaler, run_name, is_64bit = UC.IS_64BIT, device='cpu'):
     in_path = os.path.join(scaler_path, f'{run_name}-{cur_ext}')
     scaler.load_state_dict(torch.load(out_path, map_location=device, weights_only = False))
 
-def save_probe_dict(model_dict, configdict, layer_idx, trial_number):
+def save_model_dict(model_dict, configdict, layer_idx, trial_number):
     layer_str = f'l{layer_idx}'
     trial_str = f't{trial_number}'
     other_str = f'{layer_str}_{trial_str}'
-    save_path = UMN.get_save_path('model', configdict, other=other_str)
+    save_path = UMN.get_save_path('model', configdict, other=other_str, make_dir = True)
     torch.save(model_dict, save_path)
+
+def load_model_dict(model, configdict, layer_idx, trial_number, device='cpu'):
+    layer_str = f'l{layer_idx}'
+    trial_str = f't{trial_number}'
+    other_str = f'{layer_str}_{trial_str}'
+    save_path = UMN.get_save_path('model', configdict, other=other_str, make_dir = False)
+    model.load_state_dict(save_path, map_location=device, weights_only = False)
+
 
 def log_scaler_epoch_mean_var(run_name, scalerdict):
     means = scalerdict['mean_vecs_epoch'].detach().cpu().numpy()

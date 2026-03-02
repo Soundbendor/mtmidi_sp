@@ -4,7 +4,7 @@ import optuna
 from . import util_main as UMN
 from . import util_constants as UC
 
-linearnn_full_search_space = {'l2_weight_decay': [0, -1, -2, -3, -4]}
+linearnn_full_search_space = {'l2_weight_decay_exp': [0, -1, -2, -3, -4]}
 
 def get_layer_search_space(model_size):
     ret = []

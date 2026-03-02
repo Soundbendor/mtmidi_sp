@@ -51,6 +51,7 @@ def build_config(parser_args, datadict, subsetdict):
         _config['early_stopping_check_interval'] = UC.EARLY_STOPPING_CHECK_INTERVAL
         _config['early_stopping_boredom'] = UC.EARLY_STOPPING_BOREDOM
         _config['linearnnprobe_initial_dropout'] =  UC.LINEARNNPROBE_INITIAL_DROPOUT
+        _config['linearnnprobe_initial_dropout'] =  UC.LINEARNNPROBE_DROPOUT_VALUE
     else:
         _config['standard_scaler_constant_feature_mask'] = UC.STANDARD_SCALER_CONSTANT_FEATURE_MASK
     _config['train_folds'] = subsetdict['train_folds']

@@ -165,7 +165,7 @@ def dict_arrayargs_to_str(cur_dict):
             ret[k] = v
     return ret
 
-def get_save_path(save_type, configdict, other=None):
+def get_save_path(save_type, configdict, other=None, make_dir = True):
     ext = None
     subfolder = None
     dataset = configdict['dataset']
@@ -181,7 +181,7 @@ def get_save_path(save_type, configdict, other=None):
     elif save_type == 'model':
         subfolder = UC.MODELS_FOLDER
         ext = 'model_dict'
-    cur_path = by_projpath_multi(subpaths=[subfolder, dataset, expr_type],make_dir = True)
+    cur_path = by_projpath_multi(subpaths=[subfolder, dataset, expr_type],make_dir = make_dir)
     fname = None
     if other == None:
         fname = f'{model_size}-{suffix}.{ext}'
