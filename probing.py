@@ -229,7 +229,7 @@ if __name__ == "__main__":
     parser.add_argument("-rs", "--restart_study", type=strtobool, default=False, help="force restart of optuna study")
     parser.add_argument("-sh", "--from_share", type=strtobool, default=False, help="load from share partition")
     parser.add_argument("-sj", "--slurm_job", type=int, default=0, help="slurm job")
-    parser.add_argument("-sf", "--suffix", type=int, default=0, help="suffix")
+    parser.add_argument("-sf", "--suffix", type=int, default=1, help="suffix")
     parser.add_argument("-tsd", "--torch_seed", type=int, default=UC.SEED, help="torch random seed")
     parser.add_argument("-ssd", "--split_seed", type=int, default=UC.SEED, help="seed for splitting")
 

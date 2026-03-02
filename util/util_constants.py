@@ -45,6 +45,9 @@ WANDB_PATH = os.path.join(os.sep, 'nfs','guille', 'eecs_research', 'soundbendor'
 EXPR_PRETTY_NAMES = {'linearnn_full': 'Linear NN (full)'}
 MUSICGEN_SIZES = ["small", "medium", "large"]
 
+EXPR_SHORT = {"linearnn_full": "lnf", "standard_scaler": "sts"}
+SIZES_SHORT = {"small": "s", "medium": "m", "large": "l"}
+
 DATASET_SHORT = {"polyrhythms": "pl",
                  "dynamics": "dyn",
                  "seventh_chords": "ch7",
