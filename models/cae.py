@@ -18,7 +18,13 @@ class ConcreteAutoencoder(nn.Module):
         self.probs = nn.Parameter(torch.randn((k, in_dim), dtype=self.ftype, requires_grad = True))
         self.classifier = MLPProbe(in_dim = k, hidden_dims = hidden_dims, out_dim = out_dim, dropout = dropout, initial_dropout = initial_dropout)
         
-   
+  
+    def set_tau(self, tau):
+        self.tau = tau
+
+    def set_hard(self, hard):
+        self.hard = hard
+
     def forward(self, x):
         feature_weights = F.gumbel_softmax(self.probs, tau = self.tau, hard = self.hard)
         weighted_input = x @ feature_weights.T # (batch_size, in_dim) @ (in_dim, k)
