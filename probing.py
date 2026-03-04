@@ -10,7 +10,8 @@ import util.util_optuna as UO
 import util.util_probing as UP
 import util.util_rdb as UR
 
-from models.linearnnprobe import LinearNNProbe
+from models.mlpprobe import MLPProbe
+from models.cae import ConcreteAutoencoder
 from models.standard_scaler import StandardScaler
 from probe_dataset import ProbeDataset
 
@@ -136,6 +137,8 @@ def _objective(trial, datadict, subsetdict, configdict, device='cpu'):
     if l2_weight_decay_exp < 0:
         l2_weight_ecay = 10.**l2_weight_decay_exp
 
+    dropout = trial.suggest_float('dropout', 0., 0.75, step=0.25)
+
     run_name = UP.get_run_name(configdict, layer_idx, is_short = False)
     trial_number = trial.number
     
@@ -148,8 +151,7 @@ def _objective(trial, datadict, subsetdict, configdict, device='cpu'):
     scaler.eval()
 
     # init model
-    model = LinearNNProbe(in_dim =configdict['model_dim'], out_dim = datadict['num_classes'], dropout = configdict['linearnnprobe_dropout_value'] , initial_dropout = configdict['linearnnprobe_initial_dropout'])
-
+    model = MLPProbe(in_dim =configdict['model_dim'], out_dim = datadict['num_classes'], dropout = dropout, initial_dropout = configdict['probe_initial_dropout'], hidden_dims = configdict['probe_hidden_dims'])
     # init rng
     torch_gen = torch.Generator(device=device)
     torch_gen.manual_seed(configdict['torch_seed'])
@@ -206,9 +208,15 @@ def _objective(trial, datadict, subsetdict, configdict, device='cpu'):
         UP.save_model_dict(best_model_dict, configdict, layer_idx, trial_number)
     # bookkeeping
     trial.set_user_attr(key='actual_training_epochs', value=actual_training_epochs)
-    #do_str = UP.dropout_string_format(dropout)
-    run_name = UP.get_run_name(configdict, layer_idx, other = UP.weight_decay_string(wd_exp, is_short = False), is_short = False) 
-    short_name = UP.get_run_name(configdict, layer_idx, other = UP.weight_decay_string(wd_exp, is_short = True), is_short = True)
+    # naming
+    wd_long = UP.weight_decay_string(wd_exp, is_short = False)
+    wd_short = UP.weight_decay_string(wd_exp, is_short = True)
+    do_long = UP.dropout_string_format(dropout,is_short = False)
+    do_short = UP.dropout_string_format(dropout,is_short = True)
+    other_long = f'{wd_long}-{do_long}'
+    other_short = f'{wd_short}-{do_short}'
+    run_name = UP.get_run_name(configdict, layer_idx, other = other_long, is_short = False) 
+    short_name = UP.get_run_name(configdict, layer_idx, other = other_short, is_short = True)
     trial.set_user_attr(key='run_name', value=run_name)
     trial.set_user_attr(key='short_name', value=short_name)
 
@@ -288,6 +296,7 @@ if __name__ == "__main__":
         cur_study = UO.create_or_load_study(args, seed=UC.SEED)
         best_param_dict, best_trial_dict, attr_dict = UR.get_best_params(cur_study) 
         layer_idx = best_param_dict['layer_idx']['value']
+        dropout = best_param_dict['dropout']['value']
         run_name = UP.get_run_name(configdict, layer_idx, is_short = False)
 
         # some more init
@@ -300,7 +309,7 @@ if __name__ == "__main__":
         UP.load_scaler_dict(scaler, run_name, is_64bit = configdict['is_64bit'], device=device)
         scaler.eval()
 
-        model = LinearNNProbe(in_dim =configdict['model_dim'], out_dim = datadict['num_classes'], dropout = configdict['linearnnprobe_dropout_value'] , initial_dropout = configdict['linearnnprobe_initial_dropout'])
+        model = MLPProbe(in_dim =configdict['model_dim'], out_dim = datadict['num_classes'], dropout = dropout, initial_dropout = configdict['probe_initial_dropout'], hidden_dims = configdict['probe_hidden_dims'])
 
         UP.load_model_dict(model, configdict, layer_idx, trial_number, device=device)
         subsetdict['test_subset'].dataset.set_layer_idx(layer_idx)

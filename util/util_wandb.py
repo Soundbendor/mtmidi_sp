@@ -47,12 +47,18 @@ def build_config(parser_args, datadict, subsetdict):
     _config['model_dim'] = model_shape[1]
     _config['model_num_layers'] = model_shape[0]
     _config['dataloader_shuffle'] = UC.DATALOADER_SHUFFLE
-    if parser_args.expr_type != 'standard_scaler':
+    if parser_args.expr_type == 'linearnn_full':
+        _config['probe_hidden_dims'] = []
         _config['early_stopping_check_interval'] = UC.EARLY_STOPPING_CHECK_INTERVAL
         _config['early_stopping_boredom'] = UC.EARLY_STOPPING_BOREDOM
-        _config['linearnnprobe_initial_dropout'] =  UC.LINEARNNPROBE_INITIAL_DROPOUT
-        _config['linearnnprobe_initial_dropout'] =  UC.LINEARNNPROBE_DROPOUT_VALUE
-    else:
+        _config['probe_initial_dropout'] =  UC.LINEARNNPROBE_INITIAL_DROPOUT
+    elif parser_args.expr_type == 'mlp_full':
+        _config['probe_hidden_dims'] = [int(_config['model_dim'] * UC.MLPPROBE_HIDDEN_DIM_MULT)]
+        _config['early_stopping_check_interval'] = UC.EARLY_STOPPING_CHECK_INTERVAL
+        _config['early_stopping_boredom'] = UC.EARLY_STOPPING_BOREDOM
+        _config['probe_initial_dropout'] =  UC.MLPPROBE_INITIAL_DROPOUT
+        _config['probe_hidden_dropout'] =  UC.MLPPROBE_HIDDEN_DROPOUT
+    elif parser_args.expr_type != 'standard_scaler':
         _config['standard_scaler_constant_feature_mask'] = UC.STANDARD_SCALER_CONSTANT_FEATURE_MASK
     _config['train_folds'] = subsetdict['train_folds']
     _config['valid_folds'] = subsetdict['valid_folds']
@@ -89,8 +95,8 @@ def get_main_callback(initdict, as_multirun = True):
     return WBC(wandb_kwargs=initdict, as_multirun = as_multirun)
 
 def trial_name_callback(study, trial):
-    default_id = f"trial-{trial.number}_layer-{trial.params.get('layer_index', '')}_weightdecay-{trial.params.get('l2_weight_decay_exp', '')}"
-    default_name = f"t{trial.number}_l{trial.params.get('layer_index', '')}_lwd{trial.params.get('l2_weight_decay_exp', '')}"
+    default_id = f"trial-{trial.number}_layer-{trial.params.get('layer_index', '')}_weightdecay-{trial.params.get('l2_weight_decay_exp', '')}_dropout-{trial.params.get('dropout', '')}"
+    default_name = f"t{trial.number}_l{trial.params.get('layer_index', '')}_lwd{trial.params.get('l2_weight_decay_exp', '')}_do{trial.params.get('dropout', '')}"
     if wandb.run is not None:
         wandb.run.id = trial.user_attrs.get('run_name', default_id)
         wand.run.name = trial.user_attrs.get('short_name', default_name)

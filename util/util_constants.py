@@ -29,8 +29,10 @@ TEST_SUBPCT = 0.5
 OPT_DIRECTION = 'maximize'
 STANDARD_SCALER_CONSTANT_FEATURE_MASK = True
 LINEARNNPROBE_INITIAL_DROPOUT = False
-LINEARNNPROBE_DROPOUT_VALUE = 0.
 
+MLPPROBE_INITIAL_DROPOUT = False
+MLPPROBE_HIDDEN_DROPOUT = True
+MLPPROBE_HIDDEN_DIM_MULT = 0.5
 # for less than 11 classes
 CM_FIGSIZE_S = (5,5)
 # for 11 classes and up
@@ -42,10 +44,10 @@ SHARE_PATH = os.path.join(os.sep, 'nfs','hpc', 'share', 'kwand')
 WANDB_PATH = os.path.join(os.sep, 'nfs','guille', 'eecs_research', 'soundbendor', 'kwand', 'wandb') 
 
 
-EXPR_PRETTY_NAMES = {'linearnn_full': 'Linear NN (full)'}
+EXPR_PRETTY_NAMES = {'linearnn_full': 'Linear NN (full)', 'mlp_full': 'MLP NN (full)'}
 MUSICGEN_SIZES = ["small", "medium", "large"]
 
-EXPR_SHORT = {"linearnn_full": "lnf", "standard_scaler": "sts"}
+EXPR_SHORT = {"linearnn_full": "lnf", "standard_scaler": "sts", 'mlp_full': 'mlpf'}
 SIZES_SHORT = {"small": "s", "medium": "m", "large": "l"}
 
 DATASET_SHORT = {"polyrhythms": "pl",
