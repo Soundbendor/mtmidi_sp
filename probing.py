@@ -1,4 +1,5 @@
 import torch, torch.utils.data as TUD
+from torch import nn
 import optuna, pickle, numpy as np  
 
 import util.util_main as UMN
@@ -89,6 +90,7 @@ def train_model(model, scaler, generator, opt_fn, loss_fn, train_subset, batch_s
         opt_fn.step()
         cur_loss = loss.item()
         total_loss += cur_loss
+        iters += 1
     avg_loss = total_loss/float(iters)
     return avg_loss
 
