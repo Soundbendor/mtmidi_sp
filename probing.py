@@ -264,7 +264,8 @@ if __name__ == "__main__":
     
     if args.eval == False:
         # TRAINING ==========
-        UW.login()
+        if args.use_wandb == True:
+            UW.login()
         if args.expr_type == 'standard_scaler':
             for layer_idx in range(configdict['model_num_layers']):
                 wandb_dict['config']['layer_idx'] = layer_idx
@@ -282,13 +283,13 @@ if __name__ == "__main__":
 
         else:
             # optuna stuff
-            cur_study = UO.create_or_load_study(args, seed=UC.SEED)
-            UO.record_dict_in_study(cur_study, configdict)
+            studydict = UO.create_or_load_study(args, seed=UC.SEED)
+            UO.record_dict_in_study(studydict, configdict)
             objective = partial(_objective, datadict=datadict, subsetdict=subsetdict, configdict=configdict, device=device)
             callback_arr = []
             if args.use_wandb == True:
                 callback_arr = [UW.get_main_callback(wandb_dict, as_multirun = True), UW.trial_name_callback]
-            cur_study.optimize(objective, timeout = None, n_trials = None, n_jobs=1, gc_after_trial = True, callbacks=callback_arr)
+            studydict['study'].optimize(objective, timeout = None, n_trials = None, n_jobs=1, gc_after_trial = True, callbacks=callback_arr)
     else:
         # EVALUATION ========== 
 

@@ -181,7 +181,7 @@ def load_scaler_dict(scaler, run_name, is_64bit = UC.IS_64BIT, device='cpu'):
         cur_ext = '32.scaler_dict'
     scaler_path = UMN.by_projpath(UC.SCALERS_FOLDER)
     in_path = os.path.join(scaler_path, f'{run_name}-{cur_ext}')
-    scaler.load_state_dict(torch.load(out_path, map_location=device, weights_only = False))
+    scaler.load_state_dict(torch.load(in_path, map_location=device, weights_only = False))
 
 def save_model_dict(model_dict, configdict, layer_idx, trial_number):
     layer_str = f'l{layer_idx}'

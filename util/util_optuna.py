@@ -9,7 +9,7 @@ linearnn_full_search_space = {'l2_weight_decay_exp': [0, -1, -2, -3, -4], 'dropo
 
 def get_layer_search_space(model_size):
     ret = []
-    if model_size in set('small', 'medium', 'large'): 
+    if model_size in set(['small', 'medium', 'large']): 
         num_layers = UC.MODEL_NUM_LAYERS[f'musicgen-{model_size}']
         ret = list(range(num_layers))
     return ret
@@ -17,10 +17,10 @@ def get_layer_search_space(model_size):
 def create_study_name(parser_args):
     return f'{parser_args.expr_type}-{parser_args.dataset}_{parser_args.model_size}-{parser_args.suffix}'
 
-def record_dict_in_study(study, cur_dict):
+def record_dict_in_study(studydict, cur_dict):
     flat_dict = UMN.dict_arrayargs_to_str(cur_dict)
     for k,v in flat_dict.items():
-        study.set_user_attr(k,v)
+        studydict['study'].set_user_attr(k,v)
 
 def create_or_load_study(parser_args, seed=UC.SEED):
     ret = {}

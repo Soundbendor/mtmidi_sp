@@ -47,6 +47,7 @@ def build_config(parser_args, datadict, subsetdict):
     _config['model_dim'] = model_shape[1]
     _config['model_num_layers'] = model_shape[0]
     _config['dataloader_shuffle'] = UC.DATALOADER_SHUFFLE
+    _config['standard_scaler_constant_feature_mask'] = UC.STANDARD_SCALER_CONSTANT_FEATURE_MASK
     if parser_args.expr_type == 'linearnn_full':
         _config['probe_hidden_dims'] = []
         _config['early_stopping_check_interval'] = UC.EARLY_STOPPING_CHECK_INTERVAL
@@ -58,8 +59,6 @@ def build_config(parser_args, datadict, subsetdict):
         _config['early_stopping_boredom'] = UC.EARLY_STOPPING_BOREDOM
         _config['probe_initial_dropout'] =  UC.MLPPROBE_INITIAL_DROPOUT
         _config['probe_hidden_dropout'] =  UC.MLPPROBE_HIDDEN_DROPOUT
-    elif parser_args.expr_type != 'standard_scaler':
-        _config['standard_scaler_constant_feature_mask'] = UC.STANDARD_SCALER_CONSTANT_FEATURE_MASK
     _config['train_folds'] = subsetdict['train_folds']
     _config['valid_folds'] = subsetdict['valid_folds']
     _config['test_folds'] = subsetdict['test_folds']
