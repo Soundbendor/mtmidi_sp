@@ -18,7 +18,7 @@ from probe_dataset import ProbeDataset
 
 from functools import partial
 from distutils.util import strtobool
-import os, sys, time, argparse, tomllib
+import os, sys, time, argparse, copy
 
 
 # statistics gathering: first-pass (standard_scaler)
@@ -95,7 +95,7 @@ def train_model(model, scaler, generator, opt_fn, loss_fn, train_subset, batch_s
     return avg_loss
 
 def valid_test_model(model, scaler, generator, loss_fn, valid_subset, batch_size=64, shuffle = True, is_classification = True, device='cpu'):
-    valid_dl = TUD.DataLoader(train-subset, batch_size = batch_size, shuffle=shuffle, generator=generator)
+    valid_dl = TUD.DataLoader(valid_subset, batch_size = batch_size, shuffle=shuffle, generator=generator)
     
     total_loss = 0.
     iters = 0
@@ -195,11 +195,11 @@ def _objective(trial, datadict, subsetdict, configdict, device='cpu'):
                     best_model_dict = copy.deepcopy(model.state_dict())
                 else:
                     boredom += 1
-            if boredom >= config['early_stopping_boredom']:
+            if boredom >= configdict['early_stopping_boredom']:
                 actual_training_epochs = epoch_idx + 1
                 ret_score = best_score
                 break
-            elif epoch_idx == (num_epochs - 1):
+            elif epoch_idx == (configdict['num_epochs'] - 1):
                 # end of training, just report what you have
                 actual_training_epochs = epoch_idx + 1
                 best_model_dict = copy.deepcopy(model.state_dict())
