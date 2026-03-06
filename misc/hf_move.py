@@ -1,6 +1,5 @@
 import os
 import polars as pl
-import util as UM
 from util import util_main as UMN
 from util import util_constants as UC
 import sys
@@ -23,14 +22,14 @@ for model_size in UC.MODEL_NUM_LAYERS.keys():
         cur_fp = os.path.join(dsdatdir, model_size)
         cur_name = df[i]['name'][0]
         cur_dat = f'{cur_name}.dat'
-        cur_dat = os.path.join(cur_fp, cur_dat)
+        from_fp = os.path.join(cur_fp, cur_dat)
         cur_fold = df[i]['fold'][0]
         fold_folder = f'fold_{cur_fold}'
-
         fold_fp = os.path.join(cur_fp, fold_folder)
         to_fp = os.path.join(fold_fp, cur_dat)
         if os.path.isdir(fold_fp) == False:
             os.mkdir(fold_fp)
+        #print(f'moving from {from_fp} to {to_fp}')
         os.rename(from_fp, to_fp)
 
 
