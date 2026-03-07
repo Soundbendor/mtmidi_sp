@@ -87,19 +87,19 @@ def get_run_and_short_names(configdict, layer_idx, name_params):
     other_long_arr = []
     other_short_arr = []
     if 'l2_weight_decay_exp' in name_params.keys():
-        wd_long = UO.weight_decay_string_format(name_params['l2_weight_decay_exp'] , is_short = False)
-        wd_short = UO.weight_decay_string_format(name_params['l2_weight_decay_exp'] , is_short = True)
+        wd_long = weight_decay_string_format(name_params['l2_weight_decay_exp'] , is_short = False)
+        wd_short = weight_decay_string_format(name_params['l2_weight_decay_exp'] , is_short = True)
         other_long_arr.append(wd_long)
         other_short_arr.append(wd_short)
     if 'dropout' in name_params.keys():
-        do_long = UO.dropout_string_format(name_params['dropout'],is_short = False)
-        do_short = UO.dropout_string_format(name_params['dropout'],is_short = True)
+        do_long = dropout_string_format(name_params['dropout'],is_short = False)
+        do_short = dropout_string_format(name_params['dropout'],is_short = True)
         other_long_arr.append(do_long)
         other_short_arr.append(do_short)
     other_long = '_'.join(other_long_arr)
     other_short = '_'.join(other_short_arr)
-    run_name = UO.get_run_name(configdict, layer_idx, other = other_long, is_short = False) 
-    short_name = UO.get_run_name(configdict, layer_idx, other = other_short, is_short = True)
+    run_name = get_run_name(configdict, layer_idx, other = other_long, is_short = False) 
+    short_name = get_run_name(configdict, layer_idx, other = other_short, is_short = True)
     return run_name, short_name
 
 
