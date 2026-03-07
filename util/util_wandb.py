@@ -109,4 +109,6 @@ def add_to_summary(cur_run, add_dict):
         cur_run.summary[k] = v
 
 def log_accum_metrics(cur_run, accum_metrics):
-   for i,metricdict in enumerate(accum_metrics):
+    for i,metricdict in enumerate(accum_metrics):
+        cur_run.log(metricdict, step=i)
+
