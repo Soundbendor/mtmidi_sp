@@ -12,11 +12,12 @@ class ConcreteAutoencoder(nn.Module):
         self.k = k
         self.tau = tau
         self.hard = hard
-       
+        self.generator = generator
+
         # need k gumbel_softmax layers with dimension in_dim
         # to select k elements from in_dim elements
         self.probs = nn.Parameter(torch.empty((k, in_dim), dtype=self.ftype, requires_grad = True))
-        nn.init.uniform_(self.probs, generator = generator)
+        nn.init.uniform_(self.probs, generator = self.generator)
         self.classifier = MLPProbe(in_dim = k, hidden_dims = hidden_dims, out_dim = out_dim, dropout = dropout, initial_dropout = initial_dropout)
         
   
