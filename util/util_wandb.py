@@ -25,7 +25,9 @@ def login():
     wandb.login(key = _key)
 
 # call directly for standard_scaler
-def init(wdict):
+def init(wdict, override = None):
+    if override is not None:
+        wdict.update(override)
     run = wandb.init(
             entity = wdict['entity'], 
             project = wdict['project'],
@@ -33,7 +35,8 @@ def init(wdict):
             id = wdict['id'],
             name = wdict['name'],
             config = wdict['config'],
-            settings=wdict['settings']
+            settings=wdict['settings'],
+            reinit = True
             )
     return run
 
@@ -97,7 +100,13 @@ def trial_name_callback(study, trial):
     default_id = f"trial-{trial.number}_layer-{trial.params.get('layer_index', '')}_weightdecay-{trial.params.get('l2_weight_decay_exp', '')}_dropout-{trial.params.get('dropout', '')}"
     default_name = f"t{trial.number}_l{trial.params.get('layer_index', '')}_lwd{trial.params.get('l2_weight_decay_exp', '')}_do{trial.params.get('dropout', '')}"
     if wandb.run is not None:
-        wandb.run.id = trial.user_attrs.get('run_name', default_id)
-        wand.run.name = trial.user_attrs.get('short_name', default_name)
+        #wandb.run.id = trial.user_attrs.get('run_name', default_id) # immutable
+        wandb.run.name = trial.user_attrs.get('short_name', default_name)
         wandb.run.save()
 
+def add_to_summary(cur_run, add_dict):
+    for (k,v) in add_dict.items():
+        cur_run.summary[k] = v
+
+def log_accum_metrics(cur_run, accum_metrics):
+   for i,metricdict in enumerate(accum_metrics):

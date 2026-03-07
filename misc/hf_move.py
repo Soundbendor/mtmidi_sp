@@ -17,7 +17,8 @@ df = pl.read_csv(csvfile)
 
 #os.mkdir(dstestdir)
 
-for model_size in UC.MODEL_NUM_LAYERS.keys():
+#for model_size in UC.MODEL_NUM_LAYERS.keys():
+for model_size in ['musicgen-large']:
     for i in range(len(df)):
         cur_fp = os.path.join(dsdatdir, model_size)
         cur_name = df[i]['name'][0]

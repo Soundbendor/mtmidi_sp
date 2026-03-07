@@ -128,7 +128,7 @@ def valid_test_model(model, scaler, generator, loss_fn, valid_subset, batch_size
         avg_loss = total_loss/float(iters)
     return avg_loss, truths, preds
 
-def _objective(trial, datadict, subsetdict, configdict, device='cpu'):
+def _objective(trial, datadict, subsetdict, configdict, wandbdict, device='cpu'):
     #dropout = trial.suggest_float('dropout', 0.25, 0.75, step=0.25)
 
     layer_idx = trial.suggest_categorical('layer_idx', list(range(configdict['model_num_layers'])))
@@ -137,11 +137,11 @@ def _objective(trial, datadict, subsetdict, configdict, device='cpu'):
     l2_weight_decay = 0
 
     if l2_weight_decay_exp < 0:
-        l2_weight_ecay = 10.**l2_weight_decay_exp
+        l2_weight_decay = 10.**l2_weight_decay_exp
 
     dropout = trial.suggest_float('dropout', 0., 0.75, step=0.25)
 
-    run_name = UP.get_run_name(configdict, layer_idx, is_short = False)
+    run_name = UO.get_run_name(configdict, layer_idx, is_short = False)
     trial_number = trial.number
     
     subsetdict['train_subset'].dataset.set_layer_idx(layer_idx)
@@ -174,9 +174,19 @@ def _objective(trial, datadict, subsetdict, configdict, device='cpu'):
         
     best_score = float('-inf')
     ret_score = float('-inf')
+    accum_metrics = None
     best_model_dict = None
     actual_training_epochs = None
 
+    # wandbstuff
+    cur_run = None
+    run_name = None
+    short_name = None
+    if confidgdict['use_wandb'] == True:
+        param_dict = {'l2_weight_decay_exp': l2_weight_decay_exp, 'dropout': dropout}
+        run_name, short_name = UO.get_run_and_short_name(configdict, layer_idx, param_dict) 
+        cur_run = UW.init(wandbdict, {'id': run_name, 'name': short_name})
+        UW.add_to_summary(param_dict)
     # now for the actual train/valid loops
     for epoch_idx in range(configdict['num_epochs']):
         # train/valid
@@ -184,6 +194,7 @@ def _objective(trial, datadict, subsetdict, configdict, device='cpu'):
         valid_avg_loss, valid_truths, valid_preds = valid_test_model(model, scaler, torch_gen, loss_fn, subsetdict['valid_subset'], batch_size=configdict['batch_size'], shuffle = configdict['dataloader_shuffle'], is_classification = datadict['is_classification'], device=device)
         # get validation metrics
         valid_metrics = UME.get_metrics(valid_truths, valid_preds, datadict, configdict, save_to_csv = False, make_cm = False)
+        accum_metrics.append(valid_metrics)
         cur_score = UME.get_optimization_metric(valid_metrics, datadict)
 
         # early stopping
@@ -211,17 +222,12 @@ def _objective(trial, datadict, subsetdict, configdict, device='cpu'):
     # bookkeeping
     trial.set_user_attr(key='actual_training_epochs', value=actual_training_epochs)
     # naming
-    wd_long = UP.weight_decay_string(wd_exp, is_short = False)
-    wd_short = UP.weight_decay_string(wd_exp, is_short = True)
-    do_long = UP.dropout_string_format(dropout,is_short = False)
-    do_short = UP.dropout_string_format(dropout,is_short = True)
-    other_long = f'{wd_long}-{do_long}'
-    other_short = f'{wd_short}-{do_short}'
-    run_name = UP.get_run_name(configdict, layer_idx, other = other_long, is_short = False) 
-    short_name = UP.get_run_name(configdict, layer_idx, other = other_short, is_short = True)
     trial.set_user_attr(key='run_name', value=run_name)
     trial.set_user_attr(key='short_name', value=short_name)
 
+    # wandb stuff
+    if configdict['use_wandb'] == True:
+        
     return ret_score
 
             
@@ -262,7 +268,7 @@ if __name__ == "__main__":
 
     # wandb stuff
     configdict = UW.build_config(args, datadict, subsetdict)
-    wandb_dict = UW.build_initdict(args, configdict)
+    wandbdict = UW.build_initdict(args, configdict)
     
     if args.eval == False:
         # TRAINING ==========
@@ -270,12 +276,12 @@ if __name__ == "__main__":
             UW.login()
         if args.expr_type == 'standard_scaler':
             for layer_idx in range(configdict['model_num_layers']):
-                wandb_dict['config']['layer_idx'] = layer_idx
-                run_name = UP.get_run_name(configdict, layer_idx, is_short = False) 
-                short_name = UP.get_run_name(configdict, layer_idx, is_short = True) 
-                wandb_dict['id'] = run_name
-                wandb_dict['name'] = short_name
-                cur_run = UW.init(wandb_dict)
+                wandbdict['config']['layer_idx'] = layer_idx
+                run_name = UO.get_run_name(configdict, layer_idx, is_short = False) 
+                short_name = UO.get_run_name(configdict, layer_idx, is_short = True) 
+                wandbdict['id'] = run_name
+                wandbdict['name'] = short_name
+                cur_run = UW.init(wandbdict)
                 scaler_dict = train_standard_scaler(datadict, subsetdict, configdict, layer_idx = layer_idx, device = device, expr_suffix = args.suffix, log_data=True)
                 UP.save_scaler_dict(scaler_dict['scaler'], run_name, is_64bit = configdict['is_64bit'])
                 UW.log_scaler_batch_mean_var(cur_run, scaler_dict)
@@ -287,10 +293,8 @@ if __name__ == "__main__":
             # optuna stuff
             studydict = UO.create_or_load_study(args, seed=UC.SEED)
             UO.record_dict_in_study(studydict, configdict)
-            objective = partial(_objective, datadict=datadict, subsetdict=subsetdict, configdict=configdict, device=device)
+            objective = partial(_objective, datadict=datadict, subsetdict=subsetdict, configdict=configdict, wandbdict=wandbdict, device=device)
             callback_arr = []
-            if args.use_wandb == True:
-                callback_arr = [UW.get_main_callback(wandb_dict, as_multirun = True), UW.trial_name_callback]
             studydict['study'].optimize(objective, timeout = None, n_trials = None, n_jobs=1, gc_after_trial = True, callbacks=callback_arr)
     else:
         # EVALUATION ========== 
@@ -300,7 +304,7 @@ if __name__ == "__main__":
         best_param_dict, best_trial_dict, attr_dict = UR.get_best_params(cur_study) 
         layer_idx = best_param_dict['layer_idx']['value']
         dropout = best_param_dict['dropout']['value']
-        run_name = UP.get_run_name(configdict, layer_idx, is_short = False)
+        run_name = UO.get_run_name(configdict, layer_idx, is_short = False)
 
         # some more init
         # init rng

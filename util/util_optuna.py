@@ -51,8 +51,56 @@ def create_or_load_study(parser_args, seed=UC.SEED):
     return ret
 
 
+def get_run_name(configdict, layer_idx, other = None, is_short = False):
+    _dataset = configdict['dataset']
+    suffix = configdict['suffix']
+    _model_size = configdict['model_size']
+    if is_short == True:
+        _dataset = UC.DATASET_SHORT[_dataset]
+        _model_size = UC.MODEL_SIZE_SHORT[_model_size]
+    ret = None
+    if other == None:
+        ret = f'{_dataset}_{_model_size}_l{layer_idx}-{suffix}'
+    else:
+        ret = f'{_dataset}_{_model_size}_l{layer_idx}_{other}-{suffix}'
+    return ret 
+
+#format string to make weight_decay be appendable to a run name
+def weight_decay_string_format(weight_decay_exp, is_short = False ):
+    wd_int = abs(int(weight_decay_exp))
+    if is_short == False:
+        return f'weightdecay{wd_int}'
+    else: 
+        return f'wd{wd_int}'
 
 
+#format string to make dropout be appendable to a run name
+def dropout_string_format(dropout, is_short = False):
+    dropout_int = int(dropout * 100)
+    if is_short == False:
+        return f'dropout{dropout_int}'
+    else:
+        return f'do{dropout_int}'
+
+
+def get_run_and_short_names(configdict, layer_idx, name_params):
+    other_long_arr = []
+    other_short_arr = []
+    if 'l2_weight_decay_exp' in name_params.keys():
+        wd_long = UO.weight_decay_string_format(name_params['l2_weight_decay_exp'] , is_short = False)
+        wd_short = UO.weight_decay_string_format(name_params['l2_weight_decay_exp'] , is_short = True)
+        other_long_arr.append(wd_long)
+        other_short_arr.append(wd_short)
+    if 'dropout' in name_params.keys():
+        do_long = UO.dropout_string_format(name_params['dropout'],is_short = False)
+        do_short = UO.dropout_string_format(name_params['dropout'],is_short = True)
+        other_long_arr.append(do_long)
+        other_short_arr.append(do_short)
+    other_long = '_'.join(other_long_arr)
+    other_short = '_'.join(other_short_arr)
+    run_name = UO.get_run_name(configdict, layer_idx, other = other_long, is_short = False) 
+    short_name = UO.get_run_name(configdict, layer_idx, other = other_short, is_short = True)
+    return run_name, short_name
 
 
 

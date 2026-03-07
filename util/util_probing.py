@@ -102,36 +102,6 @@ def get_train_test_subsets(dataset_obj, datadict, train_folds = UC.TRAIN_FOLDS, 
             }
     return ret
 
-def get_run_name(configdict, layer_idx, other = None, is_short = False):
-    _dataset = configdict['dataset']
-    suffix = configdict['suffix']
-    _model_size = configdict['model_size']
-    if is_short == True:
-        _dataset = UC.DATASET_SHORT[_dataset]
-        _model_size = UC.MODEL_SIZE_SHORT[_model_size]
-    ret = None
-    if other == None:
-        ret = f'{_dataset}_{_model_size}_l{layer_idx}-{suffix}'
-    else:
-        ret = f'{_dataset}_{_model_size}_l{layer_idx}_{other}-{suffix}'
-    return ret 
-
-#format string to make weight_decay be appendable to a run name
-def weight_decay_string_format(weight_decay_exp, is_short = False ):
-    wd_int = abs(int(weight_decay_exp))
-    if is_short == False:
-        return f'weightdecay{wd_int}'
-    else: 
-        return f'wd{wd_int}'
-
-
-#format string to make dropout be appendable to a run name
-def dropout_string_format(dropout, is_short = False):
-    dropout_int = int(dropout * 100)
-    if is_short == False:
-        return f'dropout{dropout_int}'
-    else:
-        return f'do{dropout_int}'
 
 # input torch, output torch
 def accumulate_vecs(cur_vecs, vec_to_add):
