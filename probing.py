@@ -174,7 +174,7 @@ def _objective(trial, datadict, subsetdict, configdict, wandbdict, device='cpu')
         
     best_score = float('-inf')
     ret_score = float('-inf')
-    accum_metrics = None
+    accum_metrics = []
     best_model_dict = None
     actual_training_epochs = None
 
