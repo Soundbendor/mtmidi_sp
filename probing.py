@@ -184,7 +184,7 @@ def _objective(trial, datadict, subsetdict, configdict, wandbdict, device='cpu')
     short_name = None
     if configdict['use_wandb'] == True:
         param_dict = {'l2_weight_decay_exp': l2_weight_decay_exp, 'dropout': dropout}
-        run_name, short_name = UO.get_run_and_short_name(configdict, layer_idx, param_dict) 
+        run_name, short_name = UO.get_run_and_short_names(configdict, layer_idx, param_dict) 
         cur_run = UW.init(wandbdict, {'id': run_name, 'name': short_name})
         UW.add_to_summary(param_dict)
     # now for the actual train/valid loops
