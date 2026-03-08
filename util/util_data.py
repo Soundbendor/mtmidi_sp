@@ -110,7 +110,7 @@ def load_data_dict(dataset):
         label_arr =  SPG.prog_arr
         label = 'orig_prog'
 
-    label_arr = cur_df.select([label]).to_numpy().flatten()
+    #label_arr = cur_df.select([label]).to_numpy().flatten()
 
     ret = {
             'dataset': dataset,
