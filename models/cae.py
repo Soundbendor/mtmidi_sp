@@ -27,6 +27,12 @@ class ConcreteAutoencoder(nn.Module):
     def set_hard(self, hard):
         self.hard = hard
 
+    def set_temp(self, init_temp, final_temp, epoch_idx, num_epochs):
+        # make 1-indexed
+        cur_epoch = epoch_idx + 1
+        cur_temp = init_temp * ((final_temp/init_temp)**(cur_epoch/float(num_epochs)))
+        self.set_tau(cur_temp)
+
     def forward(self, x):
         feature_weights = F.gumbel_softmax(self.probs, tau = self.tau, hard = self.hard)
         weighted_input = x @ feature_weights.T # (batch_size, in_dim) @ (in_dim, k)

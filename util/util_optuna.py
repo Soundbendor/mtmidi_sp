@@ -5,8 +5,11 @@ from . import util_main as UMN
 from . import util_constants as UC
 
 linearnn_full_search_space = {'l2_weight_decay_exp': [0, -1, -2, -3, -4], 'dropout': [0]}
-linearnn_full_search_space = {'l2_weight_decay_exp': [0, -1, -2, -3, -4], 'dropout': [0, 0.25, 0.5, 0.75]}
+mlp_full_search_space = {'l2_weight_decay_exp': [0, -1, -2, -3, -4], 'dropout': [0, 0.25, 0.5, 0.75]}
 
+# k_div divide activation size by this amount
+cae_linear_search_space = {'k_div': [512, 256, 128, 64, 32, 16, 8]}
+cae_mlp_search_space = {'k_div': [512, 256, 128, 64, 32, 16, 8]}
 def get_layer_search_space(model_size):
     ret = []
     if model_size in set(['small', 'medium', 'large']): 

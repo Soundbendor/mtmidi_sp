@@ -62,6 +62,10 @@ def build_config(parser_args, datadict, subsetdict):
         _config['early_stopping_boredom'] = UC.EARLY_STOPPING_BOREDOM
         _config['probe_initial_dropout'] =  UC.MLPPROBE_INITIAL_DROPOUT
         _config['probe_hidden_dropout'] =  UC.MLPPROBE_HIDDEN_DROPOUT
+    elif parser_args.expr_type == 'cae_linear' or parser_args.expr_type == 'cae_mlp':
+        _config['cae_init_temp'] = UC.CAE_INIT_TEMP
+        _config['cae_final_temp'] = UC.CAE_FINAL_TEMP
+
     _config['train_folds'] = subsetdict['train_folds']
     _config['valid_folds'] = subsetdict['valid_folds']
     _config['test_folds'] = subsetdict['test_folds']
